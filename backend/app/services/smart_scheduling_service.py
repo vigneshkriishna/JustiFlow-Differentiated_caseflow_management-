@@ -149,7 +149,7 @@ class SmartSchedulingService:
                         start_time=current_time.time(),
                         end_time=slot_end.time(),
                         court_room=bench.court_room,
-                        bench_id=bench.id,
+                        bench_id=bench.id if bench.id is not None else 0,
                         estimated_duration=self.slot_duration,
                         is_available=is_available,
                     )
@@ -174,26 +174,26 @@ class SmartSchedulingService:
         age_factor = 1.0 + (age_days / 30.0) * 0.5  # 50% bonus after 30 days
 
         if strategy == SchedulingStrategy.PRIORITY_FIRST:
-            return base_priority * age_factor * 2.0
+            return float(base_priority * age_factor * 2.0)
 
         elif strategy == SchedulingStrategy.FIFO:
-            return age_factor * 10.0  # Age is primary factor
+            return float(age_factor * 10.0)  # Age is primary factor
 
         elif strategy == SchedulingStrategy.SHORTEST_JOB_FIRST:
             # Estimate duration based on case type and complexity
             estimated_duration = self._estimate_case_duration(case)
             duration_factor = 100.0 / estimated_duration  # Shorter cases first
-            return duration_factor * base_priority
+            return float(duration_factor * base_priority)
 
         elif strategy == SchedulingStrategy.BALANCED:
-            return (base_priority + age_factor + complexity_weight) / 3.0
+            return float((base_priority + age_factor + complexity_weight) / 3.0)
 
         elif strategy == SchedulingStrategy.COURT_EFFICIENCY:
             # Optimize for court utilization
             efficiency_score = base_priority * complexity_weight
-            return efficiency_score
+            return float(efficiency_score)
 
-        return base_priority
+        return float(base_priority)
 
     def schedule_cases_optimally(
         self,
@@ -226,7 +226,7 @@ class SmartSchedulingService:
             return {"error": "No available slots in the specified date range"}
 
         # Calculate priority scores for all cases
-        case_priorities: List[Tuple[float, int, Case]] = []
+        case_priorities: List[Tuple[float, Optional[int], Case]] = []
         for case in cases:
             priority_score = self.calculate_case_scheduling_priority(case, strategy)
             heapq.heappush(
@@ -239,7 +239,8 @@ class SmartSchedulingService:
         slot_index = 0
 
         while case_priorities and slot_index < len(available_slots):
-            _, case_id, case = heapq.heappop(case_priorities)
+            _, case_id_opt, case = heapq.heappop(case_priorities)
+            case_id: int = case_id_opt if case_id_opt is not None else 0
 
             # Find best slot for this case
             best_slot = self._find_optimal_slot_for_case(
@@ -273,7 +274,8 @@ class SmartSchedulingService:
 
         # Add remaining cases to unscheduled
         while case_priorities:
-            _, case_id, case = heapq.heappop(case_priorities)
+            _, case_id_opt, case = heapq.heappop(case_priorities)
+            case_id: int = case_id_opt if case_id_opt is not None else 0
             unscheduled_cases.append(
                 {
                     "case_id": case.id,
@@ -379,7 +381,7 @@ class SmartSchedulingService:
         )
 
         # Generate optimization suggestions
-        suggestions = []
+        suggestions: List[Dict[str, Any]] = []
 
         # 1. Priority-based suggestions
         urgent_cases = [
@@ -417,19 +419,20 @@ class SmartSchedulingService:
         # 3. Time slot optimization
         slot_utilization = self._analyze_slot_utilization(session, start_date, end_date)
         if slot_utilization["underutilized_slots"]:
+            underutilized_slots: Any = slot_utilization["underutilized_slots"][:10]
             suggestions.append(
                 {
                     "type": "slot_optimization",
                     "priority": "medium",
                     "message": f"Found {len(slot_utilization['underutilized_slots'])} underutilized time slots",
                     "action": "reschedule_for_efficiency",
-                    "available_slots": slot_utilization["underutilized_slots"][:10],
+                    "available_slots": underutilized_slots,
                 }
             )
 
         # 4. Strategic scheduling recommendations
         strategic_recommendations = self._generate_strategic_recommendations(
-            pending_cases
+            list(pending_cases)
         )
         suggestions.extend(strategic_recommendations)
 
@@ -439,7 +442,7 @@ class SmartSchedulingService:
             "current_efficiency": current_efficiency,
             "optimization_suggestions": suggestions,
             "total_pending_cases": len(pending_cases),
-            "recommended_strategy": self._recommend_best_strategy(pending_cases),
+            "recommended_strategy": self._recommend_best_strategy(list(pending_cases)),
         }
 
     def analyze_scheduling_conflicts(self, session: Session) -> Dict[str, Any]:
@@ -903,7 +906,7 @@ class SmartSchedulingService:
         start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         end_date = start_date + timedelta(days=days_ahead)
 
-        case_ids = [case.id for case in pending_cases]
+        case_ids = [case.id for case in pending_cases if case.id is not None]
 
         return self.schedule_cases_optimally(
             session, case_ids, start_date, end_date, strategy

@@ -280,7 +280,7 @@ class BNSEnsembleClassifier:
         print(f"📊 Test Accuracy: {accuracy:.4f}")
         print(f"📊 CV Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
 
-        return self.training_metadata
+        return dict(self.training_metadata)
 
     def predict(self, case_data: Dict) -> PredictionResult:
         """Make prediction with confidence scoring and reasoning"""

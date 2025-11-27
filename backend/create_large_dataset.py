@@ -15,6 +15,8 @@ from app.models.case import CaseType, CaseStatus, CasePriority, CaseTrack
 from app.models.user import UserRole
 
 # Use proper config
+MONGO_URI: str
+DB_NAME: str
 try:
     from config import Config
 
@@ -25,12 +27,13 @@ except:
     # Fallback - require environment variable
     import os
 
-    MONGO_URI = os.getenv("MONGODB_URL")
-    if not MONGO_URI:
+    mongo_uri_env = os.getenv("MONGODB_URL")
+    if not mongo_uri_env:
         raise ValueError(
             "MONGODB_URL environment variable is required. Please set it in your .env file."
         )
-    DB_NAME = "dcm_system"
+    MONGO_URI = mongo_uri_env
+    DB_NAME = os.getenv("DATABASE_NAME", "dcm_system") or "dcm_system"
 
 # Realistic case templates
 CRIMINAL_CASES = [
