@@ -4,13 +4,16 @@ Allocates cases to daily cause lists with 15% slack
 """
 import heapq
 from datetime import date, time, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 from app.core.config import settings
 from app.models.bench import Bench
 from app.models.case import Case, CaseTrack
 from app.models.hearing import Hearing, HearingCreate, HearingStatus
 from app.models.user import User, UserRole
+
+if TYPE_CHECKING:
+    from beanie import PydanticObjectId
 
 
 class SchedulingResult:
@@ -57,10 +60,10 @@ class CaseScheduler:
         score += priority_scores.get(case.priority.value, 10)
 
         # Penalty for estimated duration (longer cases get lower priority in greedy)
-        duration_penalty = case.estimated_duration_minutes / 60  # Convert to hours
+        duration_penalty = float(case.estimated_duration_minutes) / 60  # Convert to hours
         score -= duration_penalty * 2
 
-        return score
+        return float(score)
 
     def get_available_slots_for_date(
         self, target_date: date, existing_hearings: List[Hearing], benches: List[Bench]
@@ -72,7 +75,10 @@ class CaseScheduler:
             Dict mapping bench_id to available_minutes
         """
         # Initialize with full capacity (8 hours = 480 minutes per bench)
-        bench_capacity = {bench.id: 480 for bench in benches if bench.is_active}
+        bench_capacity: Dict[int, int] = {}
+        for bench in benches:
+            if bench.is_active and bench.id is not None:
+                bench_capacity[bench.id] = 480
 
         # Subtract already scheduled hearings
         for hearing in existing_hearings:
@@ -98,7 +104,7 @@ class CaseScheduler:
         target_date: date,
         available_slots: Dict[int, int],
         judges: List[User],
-    ) -> Optional[Tuple[int, int, time]]:
+    ) -> Optional[Tuple[int, Union[int, "PydanticObjectId", None], time]]:
         """
         Find the best bench, judge, and time slot for a case
 
@@ -172,14 +178,14 @@ class CaseScheduler:
         ]
 
         # Sort cases by priority score (highest first)
-        case_priority_heap = []
+        case_priority_heap: List[Tuple[float, Optional[int], Case]] = []
         for case in unscheduled_cases:
             priority_score = self.calculate_case_priority_score(case)
             # Use negative score for max heap behavior
             heapq.heappush(case_priority_heap, (-priority_score, case.id, case))
 
         # Track scheduling statistics
-        stats = {
+        stats: Dict[str, Any] = {
             "total_cases": len(unscheduled_cases),
             "scheduled_count": 0,
             "unplaced_count": 0,
@@ -291,7 +297,7 @@ class CaseScheduler:
         date_hearings = [h for h in hearings if h.hearing_date == target_date]
 
         # Group by bench and check for overlaps
-        bench_schedules: Dict[int, List[HearingCreate]] = {}
+        bench_schedules: Dict[int, List[Union[Hearing, HearingCreate]]] = {}
         for hearing in date_hearings:
             if hearing.bench_id not in bench_schedules:
                 bench_schedules[hearing.bench_id] = []
@@ -303,19 +309,21 @@ class CaseScheduler:
                 for hearing2 in bench_hearings[i + 1 :]:
                     # Simple overlap check (would need more sophisticated logic for real times)
                     if self._hearings_overlap(hearing1, hearing2):
+                        h1_id = getattr(hearing1, 'id', None)
+                        h2_id = getattr(hearing2, 'id', None)
                         conflicts.append(
                             {
                                 "type": "time_overlap",
                                 "bench_id": bench_id,
-                                "hearing1_id": hearing1.id,
-                                "hearing2_id": hearing2.id,
-                                "description": f"Hearings {hearing1.id} and {hearing2.id} overlap on bench {bench_id}",
+                                "hearing1_id": h1_id,
+                                "hearing2_id": h2_id,
+                                "description": f"Hearings {h1_id} and {h2_id} overlap on bench {bench_id}",
                             }
                         )
 
         return conflicts
 
-    def _hearings_overlap(self, hearing1: Hearing, hearing2: Hearing) -> bool:
+    def _hearings_overlap(self, hearing1: Union[Hearing, HearingCreate], hearing2: Union[Hearing, HearingCreate]) -> bool:
         """
         Check if two hearings overlap in time
         Simplified version - in reality would need proper time calculations
