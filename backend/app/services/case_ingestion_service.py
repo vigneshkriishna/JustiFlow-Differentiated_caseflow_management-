@@ -6,7 +6,7 @@ Automatically detects case type, priority, and DCM track from case documents
 import json
 import re
 from datetime import date, datetime
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from pymongo import MongoClient
 

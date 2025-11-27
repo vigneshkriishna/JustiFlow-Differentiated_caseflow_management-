@@ -9,7 +9,7 @@ import pickle
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 # Import model compatibility layer FIRST (before pickle loading)
 # Import the module for its side-effects (registering compatibility classes for pickle)
