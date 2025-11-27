@@ -221,12 +221,11 @@ class CaseIngestionService:
 
     def __init__(self):
         """Initialize the ingestion service"""
-        mongo_uri = (
-            settings.MONGODB_URL
-            if settings.MONGODB_URL
-            else "mongodb+srv://vignesharivumani37:Vignesharivumani1230@cluster0.w7x5vdv.mongodb.net/dcm_system?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
-        )
-        self.client = MongoClient(mongo_uri)
+        if not settings.MONGODB_URL:
+            raise ValueError(
+                "MONGODB_URL environment variable is required. Please set it in your .env file."
+            )
+        self.client = MongoClient(settings.MONGODB_URL)
         self.db = self.client[settings.MONGODB_DATABASE]
         self.cases_collection = self.db.cases
 

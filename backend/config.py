@@ -34,10 +34,12 @@ class Config:
     # =============================================================================
     @property
     def MONGODB_URL(self) -> str:
-        return os.getenv(
-            "MONGODB_URL",
-            "mongodb+srv://vigneshpop:ABhQx4ap6qtrP1ed@cluster0.w7x5vdv.mongodb.net/",
-        )
+        url = os.getenv("MONGODB_URL")
+        if not url:
+            raise ValueError(
+                "MONGODB_URL environment variable is required. Please set it in your .env file."
+            )
+        return url
 
     @property
     def DATABASE_NAME(self) -> str:
@@ -45,11 +47,21 @@ class Config:
 
     @property
     def MONGODB_USERNAME(self) -> str:
-        return os.getenv("MONGODB_USERNAME", "vigneshpop")
+        username = os.getenv("MONGODB_USERNAME")
+        if not username:
+            raise ValueError(
+                "MONGODB_USERNAME environment variable is required. Please set it in your .env file."
+            )
+        return username
 
     @property
     def MONGODB_PASSWORD(self) -> str:
-        return os.getenv("MONGODB_PASSWORD", "ABhQx4ap6qtrP1ed")
+        password = os.getenv("MONGODB_PASSWORD")
+        if not password:
+            raise ValueError(
+                "MONGODB_PASSWORD environment variable is required. Please set it in your .env file."
+            )
+        return password
 
     # =============================================================================
     # JWT Configuration

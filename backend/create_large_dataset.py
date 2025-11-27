@@ -22,10 +22,14 @@ try:
     MONGO_URI = config.MONGODB_URL
     DB_NAME = config.DATABASE_NAME
 except:
-    # Fallback
-    MONGO_URI = (
-        "mongodb+srv://vigneshpop:ABhQx4ap6qtrP1ed@cluster0.w7x5vdv.mongodb.net/"
-    )
+    # Fallback - require environment variable
+    import os
+
+    MONGO_URI = os.getenv("MONGODB_URL")
+    if not MONGO_URI:
+        raise ValueError(
+            "MONGODB_URL environment variable is required. Please set it in your .env file."
+        )
     DB_NAME = "dcm_system"
 
 # Realistic case templates

@@ -13,12 +13,12 @@ from app.core.config import settings
 def check_cases():
     """Check current case count in MongoDB"""
     try:
-        # Use settings from your config - or fallback to hardcoded MongoDB URI
-        mongo_uri = (
-            settings.MONGODB_URL
-            if settings.MONGODB_URL
-            else "mongodb+srv://vignesharivumani37:Vignesharivumani1230@cluster0.w7x5vdv.mongodb.net/dcm_system?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
-        )
+        # Use settings from your config
+        if not settings.MONGODB_URL:
+            raise ValueError(
+                "MONGODB_URL environment variable is required. Please set it in your .env file."
+            )
+        mongo_uri = settings.MONGODB_URL
         db_name = (
             settings.MONGODB_DATABASE if settings.MONGODB_DATABASE else "dcm_system"
         )
