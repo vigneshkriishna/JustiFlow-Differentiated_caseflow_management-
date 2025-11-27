@@ -299,16 +299,18 @@ pip install -r requirements.txt
 6. Update `.env.mongodb`:
 
 ```env
-MONGODB_URL=mongodb+srv://vigneshpop:Lyrr0HuIyZMczzxu@cluster0.w7x5vdv.mongodb.net/
+MONGODB_URL=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/
 MONGODB_DATABASE=dcm_system
-MONGODB_USERNAME=vigneshpop
-MONGODB_PASSWORD=Lyrr0HuIyZMczzxu
-JWT_SECRET_KEY=your-super-secret-key-change-this
+MONGODB_USERNAME=YOUR_USERNAME
+MONGODB_PASSWORD=YOUR_PASSWORD
+JWT_SECRET_KEY=generate-a-secure-random-secret-key-min-32-characters
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_HOURS=24
 PORT=8001
 HOST=0.0.0.0
 ```
+
+⚠️ **Important**: Replace `YOUR_USERNAME`, `YOUR_PASSWORD`, and `YOUR_CLUSTER` with your actual MongoDB Atlas credentials. Never commit real credentials to version control!
 
 #### 3. Frontend Setup
 
