@@ -658,7 +658,7 @@ async def get_dashboard_analytics(
         seven_days_ago = datetime.now() - timedelta(days=7)
         recent_count = sum(
             (
-                1
+                True
                 for case in cases
                 if case.created_at and case.created_at >= seven_days_ago
             ),

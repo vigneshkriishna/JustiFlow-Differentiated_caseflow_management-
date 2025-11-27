@@ -4,9 +4,10 @@ Records actor, action, before/after state for compliance and debugging
 """
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from sqlmodel import Session, desc, select
+from beanie import PydanticObjectId
 
 from app.core.database import get_session
 from app.models.audit_log import AuditAction, AuditLog
@@ -25,7 +26,7 @@ class AuditService:
         action: AuditAction,
         user: Optional[User] = None,
         resource_type: str = "unknown",
-        resource_id: Optional[int] = None,
+        resource_id: Optional[Union[int, PydanticObjectId]] = None,
         before_data: Optional[Dict[str, Any]] = None,
         after_data: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
@@ -82,7 +83,7 @@ class AuditService:
         session: Session,
         user: User,
         case_data: Dict[str, Any],
-        case_id: int,
+        case_id: Optional[int],
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
     ) -> AuditLog:
@@ -104,7 +105,7 @@ class AuditService:
         self,
         session: Session,
         user: User,
-        case_id: int,
+        case_id: Optional[int],
         before_data: Dict[str, Any],
         after_data: Dict[str, Any],
         ip_address: Optional[str] = None,
@@ -141,7 +142,7 @@ class AuditService:
         self,
         session: Session,
         user: User,
-        case_id: int,
+        case_id: Optional[int],
         classification_result: Dict[str, Any],
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
@@ -164,7 +165,7 @@ class AuditService:
         self,
         session: Session,
         user: User,
-        case_id: int,
+        case_id: Optional[int],
         old_track: str,
         new_track: str,
         reason: str,
@@ -191,7 +192,7 @@ class AuditService:
         session: Session,
         user: User,
         hearing_data: Dict[str, Any],
-        hearing_id: int,
+        hearing_id: Optional[int],
         case_id: int,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,

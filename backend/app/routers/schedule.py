@@ -289,7 +289,7 @@ async def list_hearings(
 
     # Apply pagination and ordering
     statement = (
-        statement.order_by(desc(Hearing.hearing_date), Hearing.start_time)
+        statement.order_by(desc(Hearing.hearing_date), col(Hearing.start_time))
         .offset(skip)
         .limit(limit)
     )
@@ -445,7 +445,7 @@ async def get_cause_list(
     if current_user.role == "judge":
         statement = statement.where(Hearing.judge_id == current_user.id)
 
-    statement = statement.order_by(Hearing.start_time)
+    statement = statement.order_by(col(Hearing.start_time))
     hearings = list(session.exec(statement).all())
 
     # Group by bench

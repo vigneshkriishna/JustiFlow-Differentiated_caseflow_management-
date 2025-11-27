@@ -69,7 +69,7 @@ async def get_metrics(
         track_counts[track.value] = count
 
     # Unclassified cases
-    unclassified_stmt = select(func.count(Case.id)).where(Case.track.is_(None))
+    unclassified_stmt = select(func.count(Case.id)).where(col(Case.track).is_(None))
     if start_date and end_date:
         unclassified_stmt = unclassified_stmt.where(
             Case.filing_date >= start_date, Case.filing_date <= end_date
@@ -230,7 +230,7 @@ async def export_cause_list(
     """
     # Get hearings for the date
     stmt = select(Hearing).where(Hearing.hearing_date == date)
-    stmt = stmt.order_by(Hearing.bench_id, Hearing.start_time)
+    stmt = stmt.order_by(col(Hearing.bench_id), col(Hearing.start_time))
     hearings = list(session.exec(stmt).all())
 
     if not hearings:
@@ -347,7 +347,7 @@ async def get_dashboard_data(
     """
     Get dashboard data tailored to user role
     """
-    dashboard_data = {
+    dashboard_data: Dict[str, Any] = {
         "user": {
             "id": current_user.id,
             "name": current_user.full_name,
@@ -369,7 +369,7 @@ async def get_dashboard_data(
 
         # Unclassified cases assigned to me
         unclassified_stmt = select(func.count(Case.id)).where(
-            Case.assigned_clerk_id == current_user.id, Case.track.is_(None)
+            Case.assigned_clerk_id == current_user.id, col(Case.track).is_(None)
         )
         unclassified = session.exec(unclassified_stmt).first() or 0
 
@@ -412,7 +412,7 @@ async def get_dashboard_data(
         upcoming_stmt = (
             select(Hearing)
             .where(Hearing.judge_id == current_user.id, Hearing.hearing_date >= today)
-            .order_by(Hearing.hearing_date, Hearing.start_time)
+            .order_by(col(Hearing.hearing_date), col(Hearing.start_time))
             .limit(5)
         )
 

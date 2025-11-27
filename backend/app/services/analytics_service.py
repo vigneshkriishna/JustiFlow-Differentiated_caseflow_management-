@@ -4,9 +4,10 @@ Provides comprehensive analytics and reporting functionality
 """
 
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from sqlmodel import Session, select
+from beanie import PydanticObjectId
 
 from app.models.audit_log import AuditLog
 from app.models.case import Case, CasePriority, CaseStatus, CaseType
@@ -22,7 +23,7 @@ class AnalyticsService:
         self._cache = {}
 
     def get_dashboard_overview(
-        self, session: Session, user_id: Optional[int] = None
+        self, session: Session, user_id: Optional[Union[int, PydanticObjectId]] = None
     ) -> Dict[str, Any]:
         """Get comprehensive dashboard overview with key metrics"""
 

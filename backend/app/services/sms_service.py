@@ -71,7 +71,7 @@ class SMSService:
             )
 
             response = sns_client.publish(PhoneNumber=phone_number, Message=message)
-            return response["ResponseMetadata"]["HTTPStatusCode"] == 200
+            return bool(response["ResponseMetadata"]["HTTPStatusCode"] == 200)
         except ImportError:
             print("Boto3 library not installed. Run: pip install boto3")
             return False
