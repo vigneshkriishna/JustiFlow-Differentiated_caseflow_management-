@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AddUserModal from '../components/AddUserModal';
+import { API_CONFIG } from '../services/config';
 
 interface User {
   id: string;
@@ -27,7 +28,7 @@ interface User {
   created_at: string;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = API_CONFIG.BASE_URL;
 
 const Users: React.FC = () => {
   const navigate = useNavigate();

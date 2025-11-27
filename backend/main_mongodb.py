@@ -701,7 +701,7 @@ async def upload_document(
         file_size=len(file_content),
         content_type=file.content_type,
         case_id=case_id,
-        uploaded_by=str(current_user.id),
+        uploaded_by=current_user.username,  # Store username for consistent filtering
         description=description,
         document_type=document_type,
     )

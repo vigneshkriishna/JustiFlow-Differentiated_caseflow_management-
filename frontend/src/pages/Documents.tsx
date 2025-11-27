@@ -16,6 +16,7 @@ import FileUpload from '../components/FileUpload';
 import DocumentList from '../components/DocumentList';
 import DocumentPreview from '../components/DocumentPreview';
 import { useAuth, usePermissions } from '../contexts/AuthContext';
+import { API_CONFIG } from '../services/config';
 
 interface Document {
   id: string;
@@ -42,7 +43,7 @@ interface DocumentStats {
   recentUploads: number;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = API_CONFIG.BASE_URL;
 
 const Documents: React.FC = () => {
   const navigate = useNavigate();

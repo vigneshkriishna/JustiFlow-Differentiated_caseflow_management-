@@ -47,13 +47,25 @@ class Config:
 
     @property
     def MONGODB_USERNAME(self) -> str:
-        """MongoDB username (optional for local MongoDB)"""
-        return os.getenv("MONGODB_USERNAME", "")
+        """MongoDB username (required for Atlas, optional for local)"""
+        username = os.getenv("MONGODB_USERNAME", "")
+        # If using Atlas (mongodb+srv), username is required
+        if "mongodb+srv" in self.MONGODB_URL and not username:
+            raise ValueError(
+                "MONGODB_USERNAME is required for MongoDB Atlas connection"
+            )
+        return username
 
     @property
     def MONGODB_PASSWORD(self) -> str:
-        """MongoDB password (optional for local MongoDB)"""
-        return os.getenv("MONGODB_PASSWORD", "")
+        """MongoDB password (required for Atlas, optional for local)"""
+        password = os.getenv("MONGODB_PASSWORD", "")
+        # If using Atlas (mongodb+srv), password is required
+        if "mongodb+srv" in self.MONGODB_URL and not password:
+            raise ValueError(
+                "MONGODB_PASSWORD is required for MongoDB Atlas connection"
+            )
+        return password
 
     # =============================================================================
     # JWT Configuration

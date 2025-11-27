@@ -14,6 +14,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { API_CONFIG } from '../services/config';
 
 interface Case {
   id: number;
@@ -45,7 +46,7 @@ interface SchedulingResult {
   };
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = API_CONFIG.BASE_URL;
 
 const PriorityScheduling: React.FC = () => {
   const navigate = useNavigate();
