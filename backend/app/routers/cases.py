@@ -453,9 +453,7 @@ async def auto_ingest_case(
         # Convert filing_date string to date if provided
         filing_date_value: Optional[date] = None
         if ingest_data.filing_date:
-            filing_date_value = datetime.fromisoformat(
-                ingest_data.filing_date
-            ).date()
+            filing_date_value = datetime.fromisoformat(ingest_data.filing_date).date()
 
         result = ingestion_service.ingest_case(
             title=ingest_data.title,

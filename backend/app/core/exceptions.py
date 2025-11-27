@@ -42,9 +42,7 @@ class BusinessLogicError(APIError):
 class ResourceNotFoundError(APIError):
     """Resource not found error"""
 
-    def __init__(
-        self, resource: str, identifier: Optional[Union[str, int]] = None
-    ):
+    def __init__(self, resource: str, identifier: Optional[Union[str, int]] = None):
         message = f"{resource} not found"
         if identifier:
             message += f" with identifier: {identifier}"
@@ -66,9 +64,7 @@ class DuplicateResourceError(APIError):
 class InsufficientPermissionsError(APIError):
     """Insufficient permissions error"""
 
-    def __init__(
-        self, action: Optional[str] = None, resource: Optional[str] = None
-    ):
+    def __init__(self, action: Optional[str] = None, resource: Optional[str] = None):
         message = "Insufficient permissions"
         if action and resource:
             message += f" to {action} {resource}"

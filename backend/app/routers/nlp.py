@@ -309,9 +309,7 @@ async def suggest_bns_sections(
             "suggestions_count": len(suggestions),
         },
         description=f"BNS sections suggested for case synopsis ({len(suggestions)} suggestions)",
-        ip_address=(
-            request.client.host if request and request.client else None
-        ),
+        ip_address=(request.client.host if request and request.client else None),
         user_agent=request.headers.get("user-agent") if request else None,
     )
 
@@ -388,9 +386,7 @@ async def suggest_laws_for_case(
         after_data={"suggestions_count": len(suggestions), "updated_case": update_case},
         description=f"BNS sections suggested for case {case.case_number}",
         case_id=case_id,
-        ip_address=(
-            request.client.host if request and request.client else None
-        ),
+        ip_address=(request.client.host if request and request.client else None),
         user_agent=request.headers.get("user-agent") if request else None,
     )
 
@@ -536,9 +532,7 @@ async def submit_suggestion_feedback(
         },
         description=f"User feedback on BNS suggestion: {feedback_type}",
         case_id=case_id,
-        ip_address=(
-            request.client.host if request and request.client else None
-        ),
+        ip_address=(request.client.host if request and request.client else None),
         user_agent=request.headers.get("user-agent") if request else None,
     )
 
@@ -663,7 +657,12 @@ async def get_dashboard_analytics(
 
         seven_days_ago = datetime.now() - timedelta(days=7)
         recent_count = sum(
-            (1 for case in cases if case.created_at and case.created_at >= seven_days_ago), 0
+            (
+                1
+                for case in cases
+                if case.created_at and case.created_at >= seven_days_ago
+            ),
+            0,
         )
 
         return {

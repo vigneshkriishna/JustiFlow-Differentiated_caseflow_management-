@@ -277,9 +277,7 @@ async def export_cause_list(
         user=current_user,
         report_type=f"cause_list_{format}",
         report_params={"date": date.isoformat(), "format": format},
-        ip_address=(
-            request.client.host if request and request.client else None
-        ),
+        ip_address=(request.client.host if request and request.client else None),
         user_agent=request.headers.get("user-agent") if request else None,
     )
 

@@ -230,12 +230,8 @@ async def allocate_cases(
             hearing_data=hearing_create.dict(),
             hearing_id=hearing.id,
             case_id=hearing.case_id,
-            ip_address=(
-                request.client.host if request and request.client else None
-            ),
-            user_agent=(
-                request.headers.get("user-agent") if request else None
-            ),
+            ip_address=(request.client.host if request and request.client else None),
+            user_agent=(request.headers.get("user-agent") if request else None),
         )
 
     return {
