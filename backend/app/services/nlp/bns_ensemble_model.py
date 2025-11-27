@@ -27,17 +27,19 @@ from sklearn.preprocessing import LabelEncoder
 
 # Download required NLTK data
 try:
-    nltk.data.find('tokenizers/punkt')
-    nltk.data.find('corpora/stopwords')
-    nltk.data.find('corpora/wordnet')
+    nltk.data.find("tokenizers/punkt")
+    nltk.data.find("corpora/stopwords")
+    nltk.data.find("corpora/wordnet")
 except LookupError:
-    nltk.download('punkt')
-    nltk.download('stopwords')
-    nltk.download('wordnet')
+    nltk.download("punkt")
+    nltk.download("stopwords")
+    nltk.download("wordnet")
+
 
 @dataclass
 class PredictionResult:
     """Structured prediction result with confidence scoring"""
+
     bns_section: str
     confidence: float
     punishment: str
@@ -45,6 +47,7 @@ class PredictionResult:
     reasoning: List[str]
     rule_based_match: bool
     ensemble_scores: Dict[str, float]
+
 
 class BNSEnsembleClassifier:
     """
@@ -55,17 +58,15 @@ class BNSEnsembleClassifier:
     def __init__(self):
         self.tfidf_vectorizer = TfidfVectorizer(
             max_features=5000,
-            stop_words='english',
+            stop_words="english",
             ngram_range=(1, 2),
             min_df=2,
-            max_df=0.95
+            max_df=0.95,
         )
 
         # Individual classifiers
         self.logistic_classifier = LogisticRegression(
-            random_state=42,
-            max_iter=1000,
-            C=1.0
+            random_state=42, max_iter=1000, C=1.0
         )
 
         self.rf_classifier = RandomForestClassifier(
@@ -73,21 +74,21 @@ class BNSEnsembleClassifier:
             random_state=42,
             max_depth=15,
             min_samples_split=5,
-            min_samples_leaf=2
+            min_samples_leaf=2,
         )
 
         # Ensemble voting classifier
         self.ensemble_classifier = VotingClassifier(
             estimators=[
-                ('logistic', self.logistic_classifier),
-                ('random_forest', self.rf_classifier)
+                ("logistic", self.logistic_classifier),
+                ("random_forest", self.rf_classifier),
             ],
-            voting='soft'  # Use probability predictions
+            voting="soft",  # Use probability predictions
         )
 
         self.label_encoder = LabelEncoder()
         self.lemmatizer = WordNetLemmatizer()
-        self.stop_words = set(stopwords.words('english'))
+        self.stop_words = set(stopwords.words("english"))
 
         # Model artifacts
         self.is_trained = False
@@ -99,16 +100,16 @@ class BNSEnsembleClassifier:
 
         # Rule-based patterns for high-confidence matching
         self.rule_patterns = {
-            '303(2)': ['theft', 'stolen', 'snatched', 'rob', 'steal'],
-            '318(4)': ['fraud', 'cheating', 'fake', 'impersonation', 'deceive'],
-            '326': ['assault', 'hurt', 'weapon', 'attack', 'violence'],
-            '331': ['house-breaking', 'burglary', 'break', 'enter'],
-            '336': ['forgery', 'fake document', 'forged', 'false certificate'],
-            '309(4)': ['robbery', 'gunpoint', 'armed', 'threatening'],
-            '354': ['molestation', 'inappropriate touch', 'sexual harassment'],
-            '103(1)': ['murder', 'killed', 'homicide', 'death'],
-            '370': ['trafficking', 'human trafficking', 'forced labor'],
-            '364A': ['kidnapping', 'ransom', 'abduction']
+            "303(2)": ["theft", "stolen", "snatched", "rob", "steal"],
+            "318(4)": ["fraud", "cheating", "fake", "impersonation", "deceive"],
+            "326": ["assault", "hurt", "weapon", "attack", "violence"],
+            "331": ["house-breaking", "burglary", "break", "enter"],
+            "336": ["forgery", "fake document", "forged", "false certificate"],
+            "309(4)": ["robbery", "gunpoint", "armed", "threatening"],
+            "354": ["molestation", "inappropriate touch", "sexual harassment"],
+            "103(1)": ["murder", "killed", "homicide", "death"],
+            "370": ["trafficking", "human trafficking", "forced labor"],
+            "364A": ["kidnapping", "ransom", "abduction"],
         }
 
     def preprocess_text(self, text: str) -> str:
@@ -129,35 +130,37 @@ class BNSEnsembleClassifier:
                 lemmatized = self.lemmatizer.lemmatize(token)
                 processed_tokens.append(lemmatized)
 
-        return ' '.join(processed_tokens)
+        return " ".join(processed_tokens)
 
     def extract_features(self, case_data: Dict) -> str:
         """Extract and combine relevant features from case data"""
         features = []
 
         # Primary text features
-        if 'description' in case_data:
-            features.append(case_data['description'])
+        if "description" in case_data:
+            features.append(case_data["description"])
 
-        if 'title' in case_data:
-            features.append(case_data['title'])
+        if "title" in case_data:
+            features.append(case_data["title"])
 
         # Case type and severity
-        if 'case_type' in case_data:
+        if "case_type" in case_data:
             features.append(f"case_type_{case_data['case_type']}")
 
-        if 'severity' in case_data:
+        if "severity" in case_data:
             features.append(f"severity_{case_data['severity']}")
 
         # Evidence types
-        if 'evidence' in case_data and isinstance(case_data['evidence'], list):
-            evidence_text = ' '.join(case_data['evidence'])
+        if "evidence" in case_data and isinstance(case_data["evidence"], list):
+            evidence_text = " ".join(case_data["evidence"])
             features.append(f"evidence_{evidence_text}")
 
-        combined_text = ' '.join(features)
+        combined_text = " ".join(features)
         return self.preprocess_text(combined_text)
 
-    def rule_based_prediction(self, text: str) -> Optional[Tuple[str, float, List[str]]]:
+    def rule_based_prediction(
+        self, text: str
+    ) -> Optional[Tuple[str, float, List[str]]]:
         """Rule-based classification for high-confidence cases"""
         text_lower = text.lower()
         reasoning = []
@@ -187,28 +190,28 @@ class BNSEnsembleClassifier:
 
     def load_training_data(self, dataset_path: str) -> Tuple[List[str], List[str]]:
         """Load and prepare training data from JSON dataset"""
-        with open(dataset_path, 'r', encoding='utf-8') as f:
+        with open(dataset_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        self.bns_mapping = data.get('bns_mapping', {})
+        self.bns_mapping = data.get("bns_mapping", {})
 
         features = []
         labels = []
 
-        for case in data['cases']:
+        for case in data["cases"]:
             # Extract features
             feature_text = self.extract_features(case)
             features.append(feature_text)
 
             # Extract label
-            bns_section = case.get('bns_section', 'unknown')
+            bns_section = case.get("bns_section", "unknown")
             labels.append(bns_section)
 
             # Store punishment mapping
             if bns_section not in self.punishment_mapping:
                 self.punishment_mapping[bns_section] = {
-                    'punishment': case.get('punishment', 'Not specified'),
-                    'severity': case.get('severity', 'medium')
+                    "punishment": case.get("punishment", "Not specified"),
+                    "severity": case.get("severity", "medium"),
                 }
 
         return features, labels
@@ -227,7 +230,11 @@ class BNSEnsembleClassifier:
 
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
-            features, labels_encoded, test_size=0.2, random_state=42, stratify=labels_encoded
+            features,
+            labels_encoded,
+            test_size=0.2,
+            random_state=42,
+            stratify=labels_encoded,
         )
 
         print("🔄 Training TF-IDF vectorizer...")
@@ -247,24 +254,24 @@ class BNSEnsembleClassifier:
         accuracy = accuracy_score(y_test, y_pred)
 
         # Cross-validation
-        cv_scores = cross_val_score(self.ensemble_classifier, X_train_tfidf, y_train, cv=5)
+        cv_scores = cross_val_score(
+            self.ensemble_classifier, X_train_tfidf, y_train, cv=5
+        )
 
         # Detailed classification report
         class_report = classification_report(
-            y_test, y_pred,
-            target_names=self.class_names,
-            output_dict=True
+            y_test, y_pred, target_names=self.class_names, output_dict=True
         )
 
         self.training_metadata = {
-            'training_date': datetime.now().isoformat(),
-            'dataset_size': len(features),
-            'test_accuracy': accuracy,
-            'cv_mean_accuracy': cv_scores.mean(),
-            'cv_std_accuracy': cv_scores.std(),
-            'num_features': len(self.feature_names),
-            'num_classes': len(self.class_names),
-            'classification_report': class_report
+            "training_date": datetime.now().isoformat(),
+            "dataset_size": len(features),
+            "test_accuracy": accuracy,
+            "cv_mean_accuracy": cv_scores.mean(),
+            "cv_std_accuracy": cv_scores.std(),
+            "num_features": len(self.feature_names),
+            "num_classes": len(self.class_names),
+            "classification_report": class_report,
         }
 
         self.is_trained = True
@@ -293,11 +300,11 @@ class BNSEnsembleClassifier:
             return PredictionResult(
                 bns_section=bns_section,
                 confidence=confidence,
-                punishment=punishment_info.get('punishment', 'Not specified'),
-                severity=punishment_info.get('severity', 'medium'),
+                punishment=punishment_info.get("punishment", "Not specified"),
+                severity=punishment_info.get("severity", "medium"),
                 reasoning=reasoning,
                 rule_based_match=True,
-                ensemble_scores={'rule_based': confidence}
+                ensemble_scores={"rule_based": confidence},
             )
 
         # Use ensemble model
@@ -322,15 +329,15 @@ class BNSEnsembleClassifier:
         return PredictionResult(
             bns_section=predicted_bns,
             confidence=confidence,
-            punishment=punishment_info.get('punishment', 'Not specified'),
-            severity=punishment_info.get('severity', 'medium'),
+            punishment=punishment_info.get("punishment", "Not specified"),
+            severity=punishment_info.get("severity", "medium"),
             reasoning=feature_importance[:3],  # Top 3 features
             rule_based_match=False,
             ensemble_scores={
-                'ensemble': confidence,
-                'logistic': logistic_proba[prediction],
-                'random_forest': rf_proba[prediction]
-            }
+                "ensemble": confidence,
+                "logistic": logistic_proba[prediction],
+                "random_forest": rf_proba[prediction],
+            },
         )
 
     def get_feature_importance(self, feature_vector, predicted_class: str) -> List[str]:
@@ -365,34 +372,34 @@ class BNSEnsembleClassifier:
             raise ValueError("Model must be trained before saving")
 
         model_data = {
-            'tfidf_vectorizer': self.tfidf_vectorizer,
-            'ensemble_classifier': self.ensemble_classifier,
-            'label_encoder': self.label_encoder,
-            'bns_mapping': self.bns_mapping,
-            'punishment_mapping': self.punishment_mapping,
-            'rule_patterns': self.rule_patterns,
-            'training_metadata': self.training_metadata,
-            'is_trained': self.is_trained
+            "tfidf_vectorizer": self.tfidf_vectorizer,
+            "ensemble_classifier": self.ensemble_classifier,
+            "label_encoder": self.label_encoder,
+            "bns_mapping": self.bns_mapping,
+            "punishment_mapping": self.punishment_mapping,
+            "rule_patterns": self.rule_patterns,
+            "training_metadata": self.training_metadata,
+            "is_trained": self.is_trained,
         }
 
-        with open(model_path, 'wb') as f:
+        with open(model_path, "wb") as f:
             pickle.dump(model_data, f)
 
         print(f"✅ Model saved to {model_path}")
 
     def load_model(self, model_path: str):
         """Load a pre-trained model from disk"""
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             model_data = pickle.load(f)
 
-        self.tfidf_vectorizer = model_data['tfidf_vectorizer']
-        self.ensemble_classifier = model_data['ensemble_classifier']
-        self.label_encoder = model_data['label_encoder']
-        self.bns_mapping = model_data['bns_mapping']
-        self.punishment_mapping = model_data['punishment_mapping']
-        self.rule_patterns = model_data['rule_patterns']
-        self.training_metadata = model_data['training_metadata']
-        self.is_trained = model_data['is_trained']
+        self.tfidf_vectorizer = model_data["tfidf_vectorizer"]
+        self.ensemble_classifier = model_data["ensemble_classifier"]
+        self.label_encoder = model_data["label_encoder"]
+        self.bns_mapping = model_data["bns_mapping"]
+        self.punishment_mapping = model_data["punishment_mapping"]
+        self.rule_patterns = model_data["rule_patterns"]
+        self.training_metadata = model_data["training_metadata"]
+        self.is_trained = model_data["is_trained"]
 
         # Reconstruct derived attributes
         if self.is_trained:
@@ -412,14 +419,15 @@ class BNSEnsembleClassifier:
             "model_components": {
                 "tfidf_features": len(self.feature_names),
                 "classes": len(self.class_names),
-                "rule_patterns": len(self.rule_patterns)
+                "rule_patterns": len(self.rule_patterns),
             },
             "bns_sections_supported": list(self.bns_mapping.keys()),
             "accuracy_metrics": {
-                "test_accuracy": self.training_metadata.get('test_accuracy', 0),
-                "cv_accuracy": self.training_metadata.get('cv_mean_accuracy', 0)
-            }
+                "test_accuracy": self.training_metadata.get("test_accuracy", 0),
+                "cv_accuracy": self.training_metadata.get("cv_mean_accuracy", 0),
+            },
         }
+
 
 # Example usage and testing
 def test_ensemble_model():
@@ -435,7 +443,7 @@ def test_ensemble_model():
         "description": "Theft of mobile phone from public transport by snatching",
         "severity": "medium",
         "case_type": "theft",
-        "evidence": ["CCTV footage", "witness statements"]
+        "evidence": ["CCTV footage", "witness statements"],
     }
 
     print("🔬 Testing BNS Ensemble Model")
@@ -472,6 +480,7 @@ def test_ensemble_model():
     except Exception as e:
         print(f"❌ Error: {str(e)}")
         return None
+
 
 if __name__ == "__main__":
     test_ensemble_model()

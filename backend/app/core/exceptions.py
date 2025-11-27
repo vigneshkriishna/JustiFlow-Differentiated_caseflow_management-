@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 
 class APIError(Exception):
     """Custom API error class"""
+
     def __init__(self, message: str, status_code: int = 400, error_code: str = None):
         self.message = message
         self.status_code = status_code
@@ -29,12 +30,14 @@ class APIError(Exception):
 
 class BusinessLogicError(APIError):
     """Business logic validation error"""
+
     def __init__(self, message: str, error_code: str = "BUSINESS_LOGIC_ERROR"):
         super().__init__(message, status_code=400, error_code=error_code)
 
 
 class ResourceNotFoundError(APIError):
     """Resource not found error"""
+
     def __init__(self, resource: str, identifier: Union[str, int] = None):
         message = f"{resource} not found"
         if identifier:
@@ -44,6 +47,7 @@ class ResourceNotFoundError(APIError):
 
 class DuplicateResourceError(APIError):
     """Duplicate resource error"""
+
     def __init__(self, resource: str, field: str = None, value: str = None):
         message = f"{resource} already exists"
         if field and value:
@@ -53,11 +57,14 @@ class DuplicateResourceError(APIError):
 
 class InsufficientPermissionsError(APIError):
     """Insufficient permissions error"""
+
     def __init__(self, action: str = None, resource: str = None):
         message = "Insufficient permissions"
         if action and resource:
             message += f" to {action} {resource}"
-        super().__init__(message, status_code=403, error_code="INSUFFICIENT_PERMISSIONS")
+        super().__init__(
+            message, status_code=403, error_code="INSUFFICIENT_PERMISSIONS"
+        )
 
 
 def create_error_response(
@@ -65,14 +72,14 @@ def create_error_response(
     message: str,
     error_code: str = None,
     details: Any = None,
-    path: str = None
+    path: str = None,
 ) -> Dict[str, Any]:
     """Create standardized error response"""
     error_response = {
         "error": True,
         "status_code": status_code,
         "message": message,
-        "timestamp": "2024-01-01T00:00:00Z"  # Would use datetime.utcnow().isoformat() + "Z"
+        "timestamp": "2024-01-01T00:00:00Z",  # Would use datetime.utcnow().isoformat() + "Z"
     }
 
     if error_code:
@@ -101,24 +108,28 @@ def setup_exception_handlers(app: FastAPI):
                 status_code=exc.status_code,
                 message=exc.message,
                 error_code=exc.error_code,
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
         """Handle Pydantic validation errors"""
         logger.warning(f"Validation Error: {exc.errors()} - Path: {request.url.path}")
 
         # Format validation errors consistently
         validation_details = []
         for error in exc.errors():
-            validation_details.append({
-                "field": " -> ".join(str(x) for x in error["loc"]),
-                "message": error["msg"],
-                "type": error["type"],
-                "input": error.get("input")
-            })
+            validation_details.append(
+                {
+                    "field": " -> ".join(str(x) for x in error["loc"]),
+                    "message": error["msg"],
+                    "type": error["type"],
+                    "input": error.get("input"),
+                }
+            )
 
         return JSONResponse(
             status_code=422,
@@ -127,14 +138,16 @@ def setup_exception_handlers(app: FastAPI):
                 message="Validation failed",
                 error_code="VALIDATION_ERROR",
                 details=validation_details,
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         """Handle HTTP exceptions"""
-        logger.warning(f"HTTP Exception: {exc.status_code} - {exc.detail} - Path: {request.url.path}")
+        logger.warning(
+            f"HTTP Exception: {exc.status_code} - {exc.detail} - Path: {request.url.path}"
+        )
 
         # Map status codes to user-friendly messages
         message_map = {
@@ -145,7 +158,7 @@ def setup_exception_handlers(app: FastAPI):
             429: "Too many requests - please try again later",
             500: "Internal server error",
             502: "Bad gateway",
-            503: "Service unavailable"
+            503: "Service unavailable",
         }
 
         message = message_map.get(exc.status_code, exc.detail)
@@ -157,8 +170,8 @@ def setup_exception_handlers(app: FastAPI):
                 status_code=exc.status_code,
                 message=message,
                 error_code=error_code,
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(IntegrityError)
@@ -167,7 +180,7 @@ def setup_exception_handlers(app: FastAPI):
         logger.error(f"Database Integrity Error: {str(exc)} - Path: {request.url.path}")
 
         # Parse common integrity errors
-        error_message = str(exc.orig) if hasattr(exc, 'orig') else str(exc)
+        error_message = str(exc.orig) if hasattr(exc, "orig") else str(exc)
 
         if "UNIQUE constraint failed" in error_message:
             message = "Resource already exists with this identifier"
@@ -192,8 +205,8 @@ def setup_exception_handlers(app: FastAPI):
                 status_code=status_code,
                 message=message,
                 error_code=error_code,
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(SQLAlchemyError)
@@ -207,22 +220,26 @@ def setup_exception_handlers(app: FastAPI):
                 status_code=500,
                 message="Database operation failed",
                 error_code="DATABASE_ERROR",
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(ValidationError)
     async def pydantic_validation_error_handler(request: Request, exc: ValidationError):
         """Handle Pydantic model validation errors"""
-        logger.warning(f"Pydantic Validation Error: {exc.errors()} - Path: {request.url.path}")
+        logger.warning(
+            f"Pydantic Validation Error: {exc.errors()} - Path: {request.url.path}"
+        )
 
         validation_details = []
         for error in exc.errors():
-            validation_details.append({
-                "field": " -> ".join(str(x) for x in error["loc"]),
-                "message": error["msg"],
-                "type": error["type"]
-            })
+            validation_details.append(
+                {
+                    "field": " -> ".join(str(x) for x in error["loc"]),
+                    "message": error["msg"],
+                    "type": error["type"],
+                }
+            )
 
         return JSONResponse(
             status_code=422,
@@ -231,8 +248,8 @@ def setup_exception_handlers(app: FastAPI):
                 message="Model validation failed",
                 error_code="MODEL_VALIDATION_ERROR",
                 details=validation_details,
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
     @app.exception_handler(Exception)
@@ -248,8 +265,8 @@ def setup_exception_handlers(app: FastAPI):
                 status_code=500,
                 message="An unexpected error occurred",
                 error_code="INTERNAL_SERVER_ERROR",
-                path=str(request.url.path)
-            )
+                path=str(request.url.path),
+            ),
         )
 
 
@@ -287,12 +304,18 @@ def validate_positive_integer(value: int, field_name: str):
         raise_business_error(f"{field_name} must be a positive integer")
 
 
-def validate_string_length(value: str, field_name: str, min_length: int = 1, max_length: int = 255):
+def validate_string_length(
+    value: str, field_name: str, min_length: int = 1, max_length: int = 255
+):
     """Validate string length"""
     if len(value) < min_length:
-        raise_business_error(f"{field_name} must be at least {min_length} characters long")
+        raise_business_error(
+            f"{field_name} must be at least {min_length} characters long"
+        )
     if len(value) > max_length:
-        raise_business_error(f"{field_name} must be no more than {max_length} characters long")
+        raise_business_error(
+            f"{field_name} must be no more than {max_length} characters long"
+        )
 
 
 def validate_enum_value(value: str, enum_class, field_name: str):
@@ -309,9 +332,9 @@ def sanitize_string_input(value: str) -> str:
         return value
 
     # Remove potential XSS characters
-    dangerous_chars = ['<', '>', '"', "'", '&']
+    dangerous_chars = ["<", ">", '"', "'", "&"]
     for char in dangerous_chars:
-        value = value.replace(char, '')
+        value = value.replace(char, "")
 
     # Limit length to prevent DoS
     if len(value) > 10000:
@@ -328,7 +351,9 @@ def validate_file_upload(file_size: int, allowed_extensions: list, file_extensio
         raise_business_error(f"File size too large. Maximum allowed: {max_size} bytes")
 
     if file_extension.lower() not in allowed_extensions:
-        raise_business_error(f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}")
+        raise_business_error(
+            f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
+        )
 
 
 # Rate limiting helpers (for future implementation)

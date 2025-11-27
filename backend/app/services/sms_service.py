@@ -16,13 +16,16 @@ class SMSService:
         self.aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
         self.aws_region = os.getenv("AWS_REGION", "us-west-2")
 
-    def send_urgent_notification(self, phone_number: str, case_number: str, message: str) -> bool:
+    def send_urgent_notification(
+        self, phone_number: str, case_number: str, message: str
+    ) -> bool:
         """Send urgent SMS notifications"""
         sms_text = f"DCM URGENT: Case {case_number} - {message}"
         return self._send_sms(phone_number, sms_text)
 
-    def send_hearing_reminder_sms(self, phone_number: str, case_number: str,
-                                date: str, time: str) -> bool:
+    def send_hearing_reminder_sms(
+        self, phone_number: str, case_number: str, date: str, time: str
+    ) -> bool:
         """Send hearing reminder via SMS"""
         sms_text = f"DCM Reminder: Case {case_number} hearing on {date} at {time}. Please attend."
         return self._send_sms(phone_number, sms_text)
@@ -48,9 +51,7 @@ class SMSService:
 
             client = Client(self.twilio_account_sid, self.twilio_auth_token)
             message = client.messages.create(
-                body=message,
-                from_=self.twilio_phone_number,
-                to=phone_number
+                body=message, from_=self.twilio_phone_number, to=phone_number
             )
             return message.sid is not None
         except ImportError:
@@ -63,20 +64,18 @@ class SMSService:
             import boto3
 
             sns_client = boto3.client(
-                'sns',
+                "sns",
                 aws_access_key_id=self.aws_access_key,
                 aws_secret_access_key=self.aws_secret_key,
-                region_name=self.aws_region
+                region_name=self.aws_region,
             )
 
-            response = sns_client.publish(
-                PhoneNumber=phone_number,
-                Message=message
-            )
-            return response['ResponseMetadata']['HTTPStatusCode'] == 200
+            response = sns_client.publish(PhoneNumber=phone_number, Message=message)
+            return response["ResponseMetadata"]["HTTPStatusCode"] == 200
         except ImportError:
             print("Boto3 library not installed. Run: pip install boto3")
             return False
+
 
 # Global SMS service instance
 sms_service = SMSService()

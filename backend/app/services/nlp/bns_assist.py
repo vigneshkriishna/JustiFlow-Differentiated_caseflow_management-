@@ -11,13 +11,14 @@ from typing import Any, Dict, List, Optional
 
 class BNSSuggestion:
     """BNS section suggestion result"""
+
     def __init__(
         self,
         section_number: str,
         section_title: str,
         description: str,
         confidence: float,
-        keywords_matched: List[str]
+        keywords_matched: List[str],
     ):
         self.section_number = section_number
         self.section_title = section_title
@@ -31,7 +32,7 @@ class BNSSuggestion:
             "section_title": self.section_title,
             "description": self.description,
             "confidence": self.confidence,
-            "keywords_matched": self.keywords_matched
+            "keywords_matched": self.keywords_matched,
         }
 
 
@@ -51,81 +52,154 @@ class BNSAssistService:
                 "103": {
                     "title": "Murder",
                     "description": "Whoever commits murder shall be punished with death, or imprisonment for life, and shall also be liable to fine.",
-                    "keywords": ["murder", "kill", "killing", "homicide", "death", "fatal", "deadly"],
-                    "ipc_equivalent": "302"
+                    "keywords": [
+                        "murder",
+                        "kill",
+                        "killing",
+                        "homicide",
+                        "death",
+                        "fatal",
+                        "deadly",
+                    ],
+                    "ipc_equivalent": "302",
                 },
                 "104": {
                     "title": "Punishment for murder by life-convict",
                     "description": "Whoever, being under sentence of imprisonment for life, commits murder, shall be punished with death.",
                     "keywords": ["murder", "life convict", "life sentence", "prisoner"],
-                    "ipc_equivalent": "303"
+                    "ipc_equivalent": "303",
                 },
                 "105": {
                     "title": "Culpable homicide not amounting to murder",
                     "description": "Whoever commits culpable homicide not amounting to murder shall be punished with imprisonment for life, or imprisonment of either description for a term which may extend to ten years, and shall also be liable to fine.",
-                    "keywords": ["culpable homicide", "manslaughter", "unintentional killing", "negligent death"],
-                    "ipc_equivalent": "304"
+                    "keywords": [
+                        "culpable homicide",
+                        "manslaughter",
+                        "unintentional killing",
+                        "negligent death",
+                    ],
+                    "ipc_equivalent": "304",
                 },
                 "64": {
                     "title": "Theft",
                     "description": "Whoever intends to take dishonestly any moveable property out of the possession of any person without that person's consent, moves that property in order to such taking, is said to commit theft.",
-                    "keywords": ["theft", "steal", "stealing", "stolen", "thief", "burglar", "burglary", "rob"],
-                    "ipc_equivalent": "378"
+                    "keywords": [
+                        "theft",
+                        "steal",
+                        "stealing",
+                        "stolen",
+                        "thief",
+                        "burglar",
+                        "burglary",
+                        "rob",
+                    ],
+                    "ipc_equivalent": "378",
                 },
                 "65": {
                     "title": "Punishment for theft",
                     "description": "Whoever commits theft shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both.",
                     "keywords": ["theft", "steal", "stealing", "stolen"],
-                    "ipc_equivalent": "379"
+                    "ipc_equivalent": "379",
                 },
                 "69": {
                     "title": "Robbery",
                     "description": "In all robbery there is either theft or extortion. When theft is robbery, and when extortion is robbery.",
-                    "keywords": ["robbery", "rob", "robber", "armed robbery", "dacoity", "gang robbery"],
-                    "ipc_equivalent": "390"
+                    "keywords": [
+                        "robbery",
+                        "rob",
+                        "robber",
+                        "armed robbery",
+                        "dacoity",
+                        "gang robbery",
+                    ],
+                    "ipc_equivalent": "390",
                 },
                 "316": {
                     "title": "Voluntarily causing hurt",
                     "description": "Whoever voluntarily causes hurt shall be punished with imprisonment of either description for a term which may extend to one year, or with fine which may extend to one thousand rupees, or with both.",
-                    "keywords": ["hurt", "assault", "battery", "violence", "injury", "harm", "attack"],
-                    "ipc_equivalent": "323"
+                    "keywords": [
+                        "hurt",
+                        "assault",
+                        "battery",
+                        "violence",
+                        "injury",
+                        "harm",
+                        "attack",
+                    ],
+                    "ipc_equivalent": "323",
                 },
                 "322": {
                     "title": "Voluntarily causing grievous hurt",
                     "description": "Whoever voluntarily causes grievous hurt shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.",
-                    "keywords": ["grievous hurt", "serious injury", "permanent disability", "severe assault"],
-                    "ipc_equivalent": "322"
+                    "keywords": [
+                        "grievous hurt",
+                        "serious injury",
+                        "permanent disability",
+                        "severe assault",
+                    ],
+                    "ipc_equivalent": "322",
                 },
                 "63": {
                     "title": "Rape",
                     "description": "Whoever commits rape shall be punished with rigorous imprisonment of either description for a term which shall not be less than ten years, but which may extend to imprisonment for life, and shall also be liable to fine.",
-                    "keywords": ["rape", "sexual assault", "molestation", "sexual harassment", "sexual violence"],
-                    "ipc_equivalent": "376"
+                    "keywords": [
+                        "rape",
+                        "sexual assault",
+                        "molestation",
+                        "sexual harassment",
+                        "sexual violence",
+                    ],
+                    "ipc_equivalent": "376",
                 },
                 "318": {
                     "title": "Cheating",
                     "description": "Whoever cheats shall be punished with imprisonment of either description for a term which may extend to one year, or with fine, or with both.",
-                    "keywords": ["cheat", "fraud", "deception", "forgery", "fake", "counterfeit", "scam"],
-                    "ipc_equivalent": "420"
+                    "keywords": [
+                        "cheat",
+                        "fraud",
+                        "deception",
+                        "forgery",
+                        "fake",
+                        "counterfeit",
+                        "scam",
+                    ],
+                    "ipc_equivalent": "420",
                 },
                 "61": {
                     "title": "Criminal breach of trust",
                     "description": "Whoever commits criminal breach of trust shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both.",
-                    "keywords": ["breach of trust", "embezzlement", "misappropriation", "fiduciary"],
-                    "ipc_equivalent": "406"
+                    "keywords": [
+                        "breach of trust",
+                        "embezzlement",
+                        "misappropriation",
+                        "fiduciary",
+                    ],
+                    "ipc_equivalent": "406",
                 },
                 "351": {
                     "title": "Kidnapping",
                     "description": "Kidnapping is of two kinds: kidnapping from lawful guardianship, and kidnapping from the country.",
-                    "keywords": ["kidnapping", "abduction", "kidnap", "missing person", "forcible confinement"],
-                    "ipc_equivalent": "359"
+                    "keywords": [
+                        "kidnapping",
+                        "abduction",
+                        "kidnap",
+                        "missing person",
+                        "forcible confinement",
+                    ],
+                    "ipc_equivalent": "359",
                 },
                 "137": {
                     "title": "Defamation",
                     "description": "Whoever defames another shall be punished with simple imprisonment for a term which may extend to two years, or with fine, or with both.",
-                    "keywords": ["defamation", "libel", "slander", "character assassination", "reputation damage"],
-                    "ipc_equivalent": "499"
-                }
+                    "keywords": [
+                        "defamation",
+                        "libel",
+                        "slander",
+                        "character assassination",
+                        "reputation damage",
+                    ],
+                    "ipc_equivalent": "499",
+                },
             }
         }
 
@@ -136,15 +210,13 @@ class BNSAssistService:
             # Create regex patterns for each keyword
             keywords = section_data["keywords"]
             patterns[section_num] = [
-                re.compile(r'\b' + re.escape(keyword) + r'\b', re.IGNORECASE)
+                re.compile(r"\b" + re.escape(keyword) + r"\b", re.IGNORECASE)
                 for keyword in keywords
             ]
         return patterns
 
     def suggest_bns_sections(
-        self,
-        case_synopsis: str,
-        max_suggestions: int = 5
+        self, case_synopsis: str, max_suggestions: int = 5
     ) -> List[BNSSuggestion]:
         """
         Suggest BNS sections based on case synopsis
@@ -177,7 +249,9 @@ class BNSAssistService:
             # Calculate confidence score
             if matched_keywords:
                 # Base confidence on number of unique keywords matched
-                unique_keyword_score = len(matched_keywords) / len(section_data["keywords"])
+                unique_keyword_score = len(matched_keywords) / len(
+                    section_data["keywords"]
+                )
 
                 # Boost score based on total matches (repeated keywords)
                 frequency_boost = min(total_matches / 10, 0.5)  # Cap at 0.5
@@ -185,14 +259,16 @@ class BNSAssistService:
                 # Length penalty for very short synopsis
                 length_penalty = 0 if len(case_synopsis) < 50 else 0.1
 
-                confidence = min(0.95, unique_keyword_score + frequency_boost + length_penalty)
+                confidence = min(
+                    0.95, unique_keyword_score + frequency_boost + length_penalty
+                )
 
                 suggestion = BNSSuggestion(
                     section_number=section_num,
                     section_title=section_data["title"],
                     description=section_data["description"],
                     confidence=round(confidence, 2),
-                    keywords_matched=matched_keywords
+                    keywords_matched=matched_keywords,
                 )
 
                 suggestions.append(suggestion)
@@ -220,14 +296,12 @@ class BNSAssistService:
                 "title": section_data["title"],
                 "description": section_data["description"],
                 "keywords": section_data["keywords"],
-                "ipc_equivalent": section_data.get("ipc_equivalent")
+                "ipc_equivalent": section_data.get("ipc_equivalent"),
             }
         return None
 
     def search_sections_by_keyword(
-        self,
-        keyword: str,
-        max_results: int = 10
+        self, keyword: str, max_results: int = 10
     ) -> List[Dict[str, Any]]:
         """
         Search BNS sections by keyword
@@ -246,19 +320,29 @@ class BNSAssistService:
             # Check if keyword appears in title, description, or keywords
             title_match = keyword_lower in section_data["title"].lower()
             desc_match = keyword_lower in section_data["description"].lower()
-            keyword_match = any(keyword_lower in kw.lower() for kw in section_data["keywords"])
+            keyword_match = any(
+                keyword_lower in kw.lower() for kw in section_data["keywords"]
+            )
 
             if title_match or desc_match or keyword_match:
-                results.append({
-                    "section_number": section_num,
-                    "title": section_data["title"],
-                    "description": section_data["description"][:200] + "..." if len(section_data["description"]) > 200 else section_data["description"],
-                    "relevance_score": (
-                        2.0 if title_match else 0 +
-                        1.0 if keyword_match else 0 +
-                        0.5 if desc_match else 0
-                    )
-                })
+                results.append(
+                    {
+                        "section_number": section_num,
+                        "title": section_data["title"],
+                        "description": section_data["description"][:200] + "..."
+                        if len(section_data["description"]) > 200
+                        else section_data["description"],
+                        "relevance_score": (
+                            2.0
+                            if title_match
+                            else 0 + 1.0
+                            if keyword_match
+                            else 0 + 0.5
+                            if desc_match
+                            else 0
+                        ),
+                    }
+                )
 
         # Sort by relevance score
         results.sort(key=lambda x: x["relevance_score"], reverse=True)
@@ -271,22 +355,26 @@ class BNSAssistService:
 
         total_sections = len(sections)
         total_keywords = sum(len(data["keywords"]) for data in sections.values())
-        avg_keywords_per_section = total_keywords / total_sections if total_sections > 0 else 0
+        avg_keywords_per_section = (
+            total_keywords / total_sections if total_sections > 0 else 0
+        )
 
         # Group by crime category (simplified)
         crime_categories = {
             "violent": ["murder", "hurt", "rape", "assault", "robbery"],
             "property": ["theft", "burglary", "cheating", "fraud"],
             "personal": ["defamation", "kidnapping"],
-            "financial": ["breach of trust", "embezzlement"]
+            "financial": ["breach of trust", "embezzlement"],
         }
 
         category_counts = {}
         for category, category_keywords in crime_categories.items():
             count = 0
             for section_data in sections.values():
-                if any(ck in " ".join(section_data["keywords"]).lower()
-                      for ck in category_keywords):
+                if any(
+                    ck in " ".join(section_data["keywords"]).lower()
+                    for ck in category_keywords
+                ):
                     count += 1
             category_counts[category] = count
 
@@ -296,7 +384,7 @@ class BNSAssistService:
             "average_keywords_per_section": round(avg_keywords_per_section, 1),
             "category_distribution": category_counts,
             "version": "1.0.0",
-            "last_updated": "2024-01-01"  # Placeholder
+            "last_updated": "2024-01-01",  # Placeholder
         }
 
 

@@ -18,9 +18,10 @@ from beanie import Document, init_beanie
 # Import model compatibility layer FIRST and register in __main__
 try:
     from app.services.model_compat import EnhancedBNSClassifierV2
+
     # Register the class so pickle can find it when loading
     sys.modules[__name__].EnhancedBNSClassifierV2 = EnhancedBNSClassifierV2
-    globals()['EnhancedBNSClassifierV2'] = EnhancedBNSClassifierV2
+    globals()["EnhancedBNSClassifierV2"] = EnhancedBNSClassifierV2
 except ImportError:
     pass
 
@@ -38,6 +39,7 @@ from pydantic import BaseModel, Field
 # Import AI service
 try:
     from app.services.ai_service import ai_service
+
     AI_ENABLED = True
     print("✅ AI Services loaded successfully")
 except ImportError as e:
@@ -59,12 +61,14 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # MongoDB client
 mongodb_client: AsyncIOMotorClient = None
 
+
 # User roles
 class UserRole(str, Enum):
     ADMIN = "admin"
     JUDGE = "judge"
     CLERK = "clerk"
     LAWYER = "lawyer"
+
 
 # Case status
 class CaseStatus(str, Enum):
@@ -80,6 +84,7 @@ class CaseStatus(str, Enum):
     JUDGMENT_RESERVED = "JUDGMENT_RESERVED"
     DISPOSED = "DISPOSED"
 
+
 # MongoDB Models (Beanie Documents)
 class User(Document):
     username: str = Field(index=True)
@@ -92,6 +97,7 @@ class User(Document):
 
     class Settings:
         name = "users"
+
 
 class Case(Document):
     case_number: str = Field(index=True)
@@ -109,6 +115,7 @@ class Case(Document):
     class Settings:
         name = "cases"
 
+
 class Hearing(Document):
     case_id: str = Field(index=True)
     scheduled_date: datetime
@@ -121,8 +128,10 @@ class Hearing(Document):
     class Settings:
         name = "hearings"
 
+
 class CaseDocument(Document):
     """Document model for storing case-related files with content in MongoDB"""
+
     filename: str = Field(..., index=True)
     original_filename: str = Field(...)
     file_content: str = Field(...)  # Base64 encoded file content
@@ -132,11 +141,14 @@ class CaseDocument(Document):
     uploaded_by: str = Field(..., index=True)  # User who uploaded
     upload_date: datetime = Field(default_factory=datetime.utcnow)
     description: Optional[str] = Field(default=None)
-    document_type: str = Field(default="general")  # general, evidence, pleading, order, etc.
+    document_type: str = Field(
+        default="general"
+    )  # general, evidence, pleading, order, etc.
     is_public: bool = Field(default=False)  # Public access flag
 
     class Settings:
         name = "documents"
+
 
 # Pydantic models for API
 class UserCreate(BaseModel):
@@ -146,9 +158,11 @@ class UserCreate(BaseModel):
     password: str
     role: UserRole
 
+
 class UserLogin(BaseModel):
     username: str
     password: str
+
 
 class UserResponse(BaseModel):
     id: str
@@ -159,10 +173,12 @@ class UserResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     user_info: UserResponse
+
 
 class CaseCreate(BaseModel):
     title: str
@@ -170,24 +186,28 @@ class CaseCreate(BaseModel):
     case_type: str
     priority: str
 
+
 class DocumentAnalysisRequest(BaseModel):
     content: str
     filename: str = "document.txt"
 
+
 class CaseClassificationRequest(BaseModel):
     title: str
     description: str
+
 
 class SimilarCasesRequest(BaseModel):
     title: str
     description: str
     limit: int = 5
 
+
 # FastAPI app
 app = FastAPI(
     title="DCM System - AI-Powered MongoDB Edition",
     description="Digital Case Management System with MongoDB backend and AI features",
-    version="3.0.0"
+    version="3.0.0",
 )
 
 # CORS middleware
@@ -199,43 +219,53 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Helper functions
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(hours=config.JWT_EXPIRATION_HOURS)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM
+    )
     return encoded_jwt
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> User:
     try:
         token = credentials.credentials
-        payload = jwt.decode(token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, config.JWT_SECRET_KEY, algorithms=[config.JWT_ALGORITHM]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials"
+                detail="Invalid authentication credentials",
             )
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials"
+            detail="Invalid authentication credentials",
         )
 
     user = await User.find_one(User.username == username)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
         )
     return user
+
 
 # MongoDB connection
 async def connect_to_mongo():
@@ -246,12 +276,12 @@ async def connect_to_mongo():
         mongodb_client = AsyncIOMotorClient(config.MONGODB_URL)
 
         # Test connection
-        await mongodb_client.admin.command('ping')
+        await mongodb_client.admin.command("ping")
 
         # Initialize Beanie
         await init_beanie(
             database=mongodb_client[config.DATABASE_NAME],
-            document_models=[User, Case, Hearing, CaseDocument]
+            document_models=[User, Case, Hearing, CaseDocument],
         )
 
         logger.info("✅ Connected to MongoDB Atlas!")
@@ -268,6 +298,7 @@ async def connect_to_mongo():
         logger.error("   3. Your internet connection is working")
         raise
 
+
 async def create_demo_data():
     """Create demo users and cases"""
     try:
@@ -277,10 +308,34 @@ async def create_demo_data():
         if not admin_exists:
             # Create demo users
             demo_users = [
-                {"username": "admin", "email": "admin@dcm.com", "full_name": "System Administrator", "password": "admin123", "role": UserRole.ADMIN},
-                {"username": "judge1", "email": "judge1@dcm.com", "full_name": "Judge Smith", "password": "demo123", "role": UserRole.JUDGE},
-                {"username": "clerk1", "email": "clerk1@dcm.com", "full_name": "Mary Clerk", "password": "demo123", "role": UserRole.CLERK},
-                {"username": "lawyer1", "email": "lawyer1@dcm.com", "full_name": "John Lawyer", "password": "demo123", "role": UserRole.LAWYER},
+                {
+                    "username": "admin",
+                    "email": "admin@dcm.com",
+                    "full_name": "System Administrator",
+                    "password": "admin123",
+                    "role": UserRole.ADMIN,
+                },
+                {
+                    "username": "judge1",
+                    "email": "judge1@dcm.com",
+                    "full_name": "Judge Smith",
+                    "password": "demo123",
+                    "role": UserRole.JUDGE,
+                },
+                {
+                    "username": "clerk1",
+                    "email": "clerk1@dcm.com",
+                    "full_name": "Mary Clerk",
+                    "password": "demo123",
+                    "role": UserRole.CLERK,
+                },
+                {
+                    "username": "lawyer1",
+                    "email": "lawyer1@dcm.com",
+                    "full_name": "John Lawyer",
+                    "password": "demo123",
+                    "role": UserRole.LAWYER,
+                },
             ]
 
             for user_data in demo_users:
@@ -289,7 +344,7 @@ async def create_demo_data():
                     email=user_data["email"],
                     full_name=user_data["full_name"],
                     hashed_password=hash_password(user_data["password"]),
-                    role=user_data["role"]
+                    role=user_data["role"],
                 )
                 await user.insert()
 
@@ -305,7 +360,7 @@ async def create_demo_data():
                     "status": CaseStatus.PENDING,
                     "priority": "high",
                     "assigned_judge": "judge1",
-                    "created_by": "clerk1"
+                    "created_by": "clerk1",
                 },
                 {
                     "case_number": "DCM-2024-002",
@@ -315,8 +370,8 @@ async def create_demo_data():
                     "status": CaseStatus.IN_PROGRESS,
                     "priority": "medium",
                     "assigned_judge": "judge1",
-                    "created_by": "clerk1"
-                }
+                    "created_by": "clerk1",
+                },
             ]
 
             for case_data in demo_cases:
@@ -330,21 +385,25 @@ async def create_demo_data():
     except Exception as e:
         logger.error(f"❌ Error creating demo data: {e}")
 
+
 async def close_mongo_connection():
     """Close database connection"""
     global mongodb_client
     if mongodb_client:
         mongodb_client.close()
 
+
 # Startup event
 @app.on_event("startup")
 async def startup_db_client():
     await connect_to_mongo()
 
+
 # Shutdown event
 @app.on_event("shutdown")
 async def shutdown_db_client():
     await close_mongo_connection()
+
 
 # API Routes
 @app.get("/")
@@ -363,13 +422,12 @@ async def root():
             "Document Analysis",
             "Similar Cases Search",
             "Case Insights",
-            "Smart Analytics"
-        ] if AI_ENABLED else [
-            "User Authentication",
-            "Case Management",
-            "Document Upload"
+            "Smart Analytics",
         ]
+        if AI_ENABLED
+        else ["User Authentication", "Case Management", "Document Upload"],
     }
+
 
 @app.get("/health")
 async def health_check():
@@ -382,10 +440,13 @@ async def health_check():
             "status": "healthy",
             "database": "connected",
             "users": user_count,
-            "cases": case_count
+            "cases": case_count,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database connection failed: {str(e)}"
+        )
+
 
 # Authentication routes
 @app.post("/auth/register", response_model=UserResponse)
@@ -393,17 +454,11 @@ async def register(user_data: UserCreate):
     # Check if user already exists
     existing_user = await User.find_one(User.username == user_data.username)
     if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already registered"
-        )
+        raise HTTPException(status_code=400, detail="Username already registered")
 
     existing_email = await User.find_one(User.email == user_data.email)
     if existing_email:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already registered"
-        )
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     # Create new user
     user = User(
@@ -411,7 +466,7 @@ async def register(user_data: UserCreate):
         email=user_data.email,
         full_name=user_data.full_name,
         hashed_password=hash_password(user_data.password),
-        role=user_data.role
+        role=user_data.role,
     )
 
     await user.insert()
@@ -423,8 +478,9 @@ async def register(user_data: UserCreate):
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
-        created_at=user.created_at
+        created_at=user.created_at,
     )
+
 
 @app.post("/auth/login", response_model=Token)
 async def login(user_credentials: UserLogin):
@@ -434,13 +490,12 @@ async def login(user_credentials: UserLogin):
     if not user or not verify_password(user_credentials.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
+            detail="Incorrect username or password",
         )
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User account is disabled"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User account is disabled"
         )
 
     # Create access token
@@ -453,14 +508,13 @@ async def login(user_credentials: UserLogin):
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
-        created_at=user.created_at
+        created_at=user.created_at,
     )
 
     return Token(
-        access_token=access_token,
-        token_type="bearer",
-        user_info=user_response
+        access_token=access_token, token_type="bearer", user_info=user_response
     )
+
 
 @app.get("/auth/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
@@ -471,8 +525,9 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         full_name=current_user.full_name,
         role=current_user.role,
         is_active=current_user.is_active,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
     )
+
 
 # Cases routes
 @app.get("/api/cases")
@@ -489,12 +544,14 @@ async def get_cases(current_user: User = Depends(get_current_user)):
                 "title": case.title,
                 "description": case.description,
                 "case_type": case.case_type,
-                "status": case.status.value if hasattr(case.status, 'value') else case.status,
+                "status": case.status.value
+                if hasattr(case.status, "value")
+                else case.status,
                 "priority": case.priority,
                 "assigned_judge": case.assigned_judge,
                 "created_by": case.created_by,
                 "created_at": case.created_at.isoformat() if case.created_at else None,
-                "updated_at": case.updated_at.isoformat() if case.updated_at else None
+                "updated_at": case.updated_at.isoformat() if case.updated_at else None,
             }
             for case in cases
         ]
@@ -505,8 +562,11 @@ async def get_cases(current_user: User = Depends(get_current_user)):
         logger.exception("Full traceback:")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api/cases")
-async def create_case(case_data: CaseCreate, current_user: User = Depends(get_current_user)):
+async def create_case(
+    case_data: CaseCreate, current_user: User = Depends(get_current_user)
+):
     # Generate case number
     case_count = await Case.count() + 1
     case_number = f"DCM-2024-{case_count:03d}"
@@ -518,7 +578,7 @@ async def create_case(case_data: CaseCreate, current_user: User = Depends(get_cu
         case_type=case_data.case_type,
         status=CaseStatus.PENDING,
         priority=case_data.priority,
-        created_by=current_user.username
+        created_by=current_user.username,
     )
 
     await case.insert()
@@ -528,17 +588,15 @@ async def create_case(case_data: CaseCreate, current_user: User = Depends(get_cu
         "case_number": case.case_number,
         "title": case.title,
         "status": case.status,
-        "message": "Case created successfully"
+        "message": "Case created successfully",
     }
+
 
 # Users route (admin only)
 @app.get("/api/users")
 async def get_users(current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403,
-            detail="Admin access required"
-        )
+        raise HTTPException(status_code=403, detail="Admin access required")
 
     users = await User.find().to_list()
     return [
@@ -549,39 +607,30 @@ async def get_users(current_user: User = Depends(get_current_user)):
             full_name=user.full_name,
             role=user.role,
             is_active=user.is_active,
-            created_at=user.created_at
+            created_at=user.created_at,
         )
         for user in users
     ]
 
+
 @app.post("/api/users")
 async def create_user(
-    user_data: UserCreate,
-    current_user: User = Depends(get_current_user)
+    user_data: UserCreate, current_user: User = Depends(get_current_user)
 ):
     """Create a new user (Admin only)"""
 
     if current_user.role != UserRole.ADMIN:
-        raise HTTPException(
-            status_code=403,
-            detail="Admin access required"
-        )
+        raise HTTPException(status_code=403, detail="Admin access required")
 
     # Check if username already exists
     existing_user = await User.find_one(User.username == user_data.username)
     if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already exists"
-        )
+        raise HTTPException(status_code=400, detail="Username already exists")
 
     # Check if email already exists
     existing_email = await User.find_one(User.email == user_data.email)
     if existing_email:
-        raise HTTPException(
-            status_code=400,
-            detail="Email already exists"
-        )
+        raise HTTPException(status_code=400, detail="Email already exists")
 
     # Hash the password using passlib
     hashed_password = pwd_context.hash(user_data.password)
@@ -594,7 +643,7 @@ async def create_user(
         hashed_password=hashed_password,
         role=user_data.role,
         is_active=True,
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
     )
 
     await new_user.insert()
@@ -606,8 +655,9 @@ async def create_user(
         full_name=new_user.full_name,
         role=new_user.role,
         is_active=new_user.is_active,
-        created_at=new_user.created_at
+        created_at=new_user.created_at,
     )
+
 
 # Document API routes
 @app.post("/api/documents/upload")
@@ -616,7 +666,7 @@ async def upload_document(
     case_id: Optional[str] = None,
     description: Optional[str] = None,
     document_type: str = "general",
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Upload a document (PDF, DOC, DOCX, TXT, etc.)"""
 
@@ -625,7 +675,7 @@ async def upload_document(
     if current_user.role not in upload_roles:
         raise HTTPException(
             status_code=403,
-            detail=f"Document upload not allowed for role {current_user.role}. Required roles: {', '.join([role.value for role in upload_roles])}"
+            detail=f"Document upload not allowed for role {current_user.role}. Required roles: {', '.join([role.value for role in upload_roles])}",
         )
 
     # Validate file type
@@ -636,25 +686,22 @@ async def upload_document(
         "text/plain",
         "image/jpeg",
         "image/png",
-        "image/gif"
+        "image/gif",
     }
 
     if file.content_type not in allowed_types:
         raise HTTPException(
             status_code=400,
-            detail=f"File type {file.content_type} not allowed. Allowed types: PDF, DOC, DOCX, TXT, JPG, PNG, GIF"
+            detail=f"File type {file.content_type} not allowed. Allowed types: PDF, DOC, DOCX, TXT, JPG, PNG, GIF",
         )
 
     # Validate file size (max 10MB)
     file_content = await file.read()
     if len(file_content) > 10 * 1024 * 1024:  # 10MB
-        raise HTTPException(
-            status_code=400,
-            detail="File size must be less than 10MB"
-        )
+        raise HTTPException(status_code=400, detail="File size must be less than 10MB")
 
     # Encode file content to base64 for MongoDB storage
-    file_content_base64 = base64.b64encode(file_content).decode('utf-8')
+    file_content_base64 = base64.b64encode(file_content).decode("utf-8")
 
     # Generate unique filename
     file_extension = Path(file.filename).suffix
@@ -670,7 +717,7 @@ async def upload_document(
         case_id=case_id,
         uploaded_by=str(current_user.id),
         description=description,
-        document_type=document_type
+        document_type=document_type,
     )
 
     await document.insert()
@@ -684,14 +731,15 @@ async def upload_document(
         "upload_date": document.upload_date,
         "case_id": document.case_id,
         "description": document.description,
-        "document_type": document.document_type
+        "document_type": document.document_type,
     }
+
 
 @app.get("/api/documents")
 async def get_documents(
     case_id: Optional[str] = None,
     document_type: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get list of documents, filtered by uploader (only show documents uploaded by current user)"""
 
@@ -716,15 +764,15 @@ async def get_documents(
             "upload_date": doc.upload_date,
             "case_id": doc.case_id,
             "description": doc.description,
-            "document_type": doc.document_type
+            "document_type": doc.document_type,
         }
         for doc in documents
     ]
 
+
 @app.get("/api/documents/{document_id}/download")
 async def download_document(
-    document_id: str,
-    current_user: User = Depends(get_current_user)
+    document_id: str, current_user: User = Depends(get_current_user)
 ):
     """Download a document file from MongoDB"""
 
@@ -734,7 +782,10 @@ async def download_document(
 
     # Check permissions - users can only download their own documents
     if document.uploaded_by != current_user.username:
-        raise HTTPException(status_code=403, detail="Access denied. You can only access your own documents.")
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. You can only access your own documents.",
+        )
 
     # Decode base64 content back to binary
     try:
@@ -748,13 +799,13 @@ async def download_document(
         media_type=document.content_type,
         headers={
             "Content-Disposition": f'attachment; filename="{document.original_filename}"'
-        }
+        },
     )
+
 
 @app.get("/api/documents/{document_id}/preview")
 async def preview_document(
-    document_id: str,
-    current_user: User = Depends(get_current_user)
+    document_id: str, current_user: User = Depends(get_current_user)
 ):
     """Preview a document file in browser (inline display)"""
 
@@ -764,7 +815,10 @@ async def preview_document(
 
     # Check permissions - users can only preview their own documents
     if document.uploaded_by != current_user.username:
-        raise HTTPException(status_code=403, detail="Access denied. You can only access your own documents.")
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied. You can only access your own documents.",
+        )
 
     # Decode base64 content back to binary
     try:
@@ -778,13 +832,13 @@ async def preview_document(
         media_type=document.content_type,
         headers={
             "Content-Disposition": f'inline; filename="{document.original_filename}"'
-        }
+        },
     )
+
 
 @app.delete("/api/documents/{document_id}")
 async def delete_document(
-    document_id: str,
-    current_user: User = Depends(get_current_user)
+    document_id: str, current_user: User = Depends(get_current_user)
 ):
     """Delete a document from MongoDB"""
 
@@ -796,7 +850,7 @@ async def delete_document(
     if document.uploaded_by != current_user.username:
         raise HTTPException(
             status_code=403,
-            detail="Access denied. You can only delete your own documents."
+            detail="Access denied. You can only delete your own documents.",
         )
 
     # Delete document record from MongoDB (file content is stored in the document)
@@ -804,11 +858,11 @@ async def delete_document(
 
     return {"message": "Document deleted successfully from MongoDB"}
 
+
 # AI-Powered Endpoints
 @app.post("/api/ai/classify-case")
 async def classify_case_ai(
-    request: CaseClassificationRequest,
-    current_user: User = Depends(get_current_user)
+    request: CaseClassificationRequest, current_user: User = Depends(get_current_user)
 ):
     """AI-powered case classification"""
 
@@ -816,20 +870,22 @@ async def classify_case_ai(
         raise HTTPException(status_code=503, detail="AI services not available")
 
     try:
-        classification = await ai_service.classify_case(request.description, request.title)
+        classification = await ai_service.classify_case(
+            request.description, request.title
+        )
         return {
             "success": True,
             "classification": classification,
-            "message": "Case classified successfully"
+            "message": "Case classified successfully",
         }
     except Exception as e:
         logger.error(f"AI classification error: {e}")
         raise HTTPException(status_code=500, detail="Classification failed")
 
+
 @app.post("/api/ai/analyze-document")
 async def analyze_document_ai(
-    request: DocumentAnalysisRequest,
-    current_user: User = Depends(get_current_user)
+    request: DocumentAnalysisRequest, current_user: User = Depends(get_current_user)
 ):
     """AI-powered document analysis"""
 
@@ -837,20 +893,22 @@ async def analyze_document_ai(
         raise HTTPException(status_code=503, detail="AI services not available")
 
     try:
-        analysis = await ai_service.analyze_document_content(request.content, request.filename)
+        analysis = await ai_service.analyze_document_content(
+            request.content, request.filename
+        )
         return {
             "success": True,
             "analysis": analysis,
-            "message": "Document analyzed successfully"
+            "message": "Document analyzed successfully",
         }
     except Exception as e:
         logger.error(f"AI document analysis error: {e}")
         raise HTTPException(status_code=500, detail="Document analysis failed")
 
+
 @app.post("/api/ai/similar-cases")
 async def find_similar_cases_ai(
-    request: SimilarCasesRequest,
-    current_user: User = Depends(get_current_user)
+    request: SimilarCasesRequest, current_user: User = Depends(get_current_user)
 ):
     """Find similar cases using AI"""
 
@@ -861,26 +919,23 @@ async def find_similar_cases_ai(
         # Get all cases for similarity comparison
         all_cases = await Case.find().to_list()
         similar_cases = await ai_service.find_similar_cases(
-            request.description,
-            request.title,
-            limit=request.limit,
-            all_cases=all_cases
+            request.description, request.title, limit=request.limit, all_cases=all_cases
         )
 
         return {
             "success": True,
             "similar_cases": similar_cases,
             "total_found": len(similar_cases),
-            "message": "Similar cases found successfully"
+            "message": "Similar cases found successfully",
         }
     except Exception as e:
         logger.error(f"AI similar cases error: {e}")
         raise HTTPException(status_code=500, detail="Similar cases search failed")
 
+
 @app.get("/api/ai/case-insights/{case_id}")
 async def get_case_insights(
-    case_id: str,
-    current_user: User = Depends(get_current_user)
+    case_id: str, current_user: User = Depends(get_current_user)
 ):
     """Get AI-generated insights for a case"""
 
@@ -900,7 +955,7 @@ async def get_case_insights(
             "description": case.description,
             "case_type": case.case_type,
             "status": case.status,
-            "priority": case.priority
+            "priority": case.priority,
         }
 
         # Get all cases for similarity comparison
@@ -911,7 +966,7 @@ async def get_case_insights(
         return {
             "success": True,
             "insights": insights,
-            "message": "Case insights generated successfully"
+            "message": "Case insights generated successfully",
         }
     except HTTPException:
         raise
@@ -919,11 +974,10 @@ async def get_case_insights(
         logger.error(f"AI case insights error: {e}")
         raise HTTPException(status_code=500, detail="Case insights generation failed")
 
+
 @app.get("/api/ai/smart-create-case")
 async def smart_create_case_suggestions(
-    description: str,
-    title: str = "",
-    current_user: User = Depends(get_current_user)
+    description: str, title: str = "", current_user: User = Depends(get_current_user)
 ):
     """Get AI suggestions for creating a new case"""
 
@@ -951,28 +1005,30 @@ async def smart_create_case_suggestions(
                 "📝 Review suggested case type and priority",
                 "📋 Check similar cases for precedent",
                 "⚖️ Ensure all required documentation is ready",
-                "📅 Consider scheduling requirements"
-            ]
+                "📅 Consider scheduling requirements",
+            ],
         }
 
         if similar_cases:
-            suggestions["recommendations"].insert(1, f"🔍 {len(similar_cases)} similar cases found - review before creating")
+            suggestions["recommendations"].insert(
+                1,
+                f"🔍 {len(similar_cases)} similar cases found - review before creating",
+            )
 
         return {
             "success": True,
             "suggestions": suggestions,
             "similar_cases": similar_cases[:3],  # Return top 3 similar cases
-            "message": "Smart suggestions generated successfully"
+            "message": "Smart suggestions generated successfully",
         }
 
     except Exception as e:
         logger.error(f"Smart case creation error: {e}")
         raise HTTPException(status_code=500, detail="Smart case creation failed")
 
+
 @app.get("/api/ai/dashboard-analytics")
-async def get_ai_dashboard_analytics(
-    current_user: User = Depends(get_current_user)
-):
+async def get_ai_dashboard_analytics(current_user: User = Depends(get_current_user)):
     """Get AI-powered dashboard analytics"""
 
     if not AI_ENABLED:
@@ -984,8 +1040,8 @@ async def get_ai_dashboard_analytics(
                 "classification_accuracy": "N/A",
                 "top_case_types": [],
                 "priority_distribution": {},
-                "recent_ai_activities": []
-            }
+                "recent_ai_activities": [],
+            },
         }
 
     try:
@@ -1000,8 +1056,8 @@ async def get_ai_dashboard_analytics(
                     "classification_accuracy": "N/A",
                     "top_case_types": [],
                     "priority_distribution": {},
-                    "recent_ai_activities": ["No cases available for analysis"]
-                }
+                    "recent_ai_activities": ["No cases available for analysis"],
+                },
             }
 
         # Analyze case distribution
@@ -1016,14 +1072,16 @@ async def get_ai_dashboard_analytics(
             priorities[priority] = priorities.get(priority, 0) + 1
 
         # Get top case types
-        top_case_types = sorted(case_types.items(), key=lambda x: x[1], reverse=True)[:5]
+        top_case_types = sorted(case_types.items(), key=lambda x: x[1], reverse=True)[
+            :5
+        ]
 
         # Recent AI activities simulation
         ai_activities = [
             f"Classified {len(all_cases)} cases automatically",
             "Generated insights for recent cases",
             "Identified similar case patterns",
-            "Updated case priority recommendations"
+            "Updated case priority recommendations",
         ]
 
         analytics = {
@@ -1032,18 +1090,21 @@ async def get_ai_dashboard_analytics(
             "top_case_types": [{"type": k, "count": v} for k, v in top_case_types],
             "priority_distribution": priorities,
             "recent_ai_activities": ai_activities,
-            "model_info": ai_service.model_info if ai_service.model_info else "Basic Classification Model"
+            "model_info": ai_service.model_info
+            if ai_service.model_info
+            else "Basic Classification Model",
         }
 
         return {
             "success": True,
             "analytics": analytics,
-            "message": "AI analytics retrieved successfully"
+            "message": "AI analytics retrieved successfully",
         }
 
     except Exception as e:
         logger.error(f"AI dashboard analytics error: {e}")
         raise HTTPException(status_code=500, detail="AI analytics generation failed")
+
 
 # AI Status endpoint
 @app.get("/api/ai/status")
@@ -1054,7 +1115,7 @@ async def get_ai_status():
         return {
             "ai_enabled": False,
             "message": "AI services are not available",
-            "features_available": []
+            "features_available": [],
         }
 
     features = [
@@ -1063,20 +1124,20 @@ async def get_ai_status():
         "Similar Cases Search",
         "Case Insights Generation",
         "Smart Case Creation",
-        "Dashboard Analytics"
+        "Dashboard Analytics",
     ]
 
     return {
         "ai_enabled": True,
         "message": "AI services are running",
         "features_available": features,
-        "model_info": ai_service.model_info if ai_service.model_info else None
+        "model_info": ai_service.model_info if ai_service.model_info else None,
     }
+
 
 @app.get("/api/cases/{case_id}/documents")
 async def get_case_documents(
-    case_id: str,
-    current_user: User = Depends(get_current_user)
+    case_id: str, current_user: User = Depends(get_current_user)
 ):
     """Get all documents for a specific case"""
 
@@ -1096,10 +1157,11 @@ async def get_case_documents(
             "uploaded_by": doc.uploaded_by,
             "upload_date": doc.upload_date,
             "description": doc.description,
-            "document_type": doc.document_type
+            "document_type": doc.document_type,
         }
         for doc in documents
     ]
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -16,6 +16,7 @@ router = APIRouter()
 
 class UserCreate(BaseModel):
     """User creation model"""
+
     username: str
     email: str
     full_name: str
@@ -25,6 +26,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     """User update model"""
+
     username: Optional[str] = None
     email: Optional[str] = None
     full_name: Optional[str] = None
@@ -34,6 +36,7 @@ class UserUpdate(BaseModel):
 
 class UserResponse(BaseModel):
     """User response model"""
+
     id: int
     username: str
     email: str
@@ -53,7 +56,7 @@ async def list_users(
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can list users"
+            detail="Only administrators can list users",
         )
 
     users = session.exec(select(User)).all()
@@ -66,7 +69,7 @@ async def list_users(
             full_name=user.full_name,
             role=user.role,
             is_active=user.is_active,
-            created_at=user.created_at.isoformat()
+            created_at=user.created_at.isoformat(),
         )
         for user in users
     ]
@@ -90,7 +93,7 @@ async def create_user(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this username or email already exists"
+            detail="User with this username or email already exists",
         )
 
     # Create new user
@@ -100,7 +103,7 @@ async def create_user(
         full_name=user_data.full_name,
         role=user_data.role,
         is_active=True,
-        hashed_password=get_password_hash(user_data.password)
+        hashed_password=get_password_hash(user_data.password),
     )
 
     session.add(new_user)
@@ -114,7 +117,7 @@ async def create_user(
         full_name=new_user.full_name,
         role=new_user.role,
         is_active=new_user.is_active,
-        created_at=new_user.created_at.isoformat()
+        created_at=new_user.created_at.isoformat(),
     )
 
 
@@ -129,14 +132,13 @@ async def get_user(
     if user_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only view your own profile"
+            detail="You can only view your own profile",
         )
 
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     return UserResponse(
@@ -146,7 +148,7 @@ async def get_user(
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
-        created_at=user.created_at.isoformat()
+        created_at=user.created_at.isoformat(),
     )
 
 
@@ -162,14 +164,13 @@ async def update_user(
     if user_id != current_user.id and current_user.role != UserRole.ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only update your own profile"
+            detail="You can only update your own profile",
         )
 
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     # Update fields
@@ -181,7 +182,7 @@ async def update_user(
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists"
+                detail="Username already exists",
             )
         user.username = user_data.username
 
@@ -192,8 +193,7 @@ async def update_user(
         ).first()
         if existing:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already exists"
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
             )
         user.email = user_data.email
 
@@ -218,7 +218,7 @@ async def update_user(
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
-        created_at=user.created_at.isoformat()
+        created_at=user.created_at.isoformat(),
     )
 
 
@@ -233,15 +233,14 @@ async def delete_user(
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
     # Prevent deleting yourself
     if user_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="You cannot delete your own account"
+            detail="You cannot delete your own account",
         )
 
     session.delete(user)
@@ -257,7 +256,6 @@ async def get_available_roles(
     """Get available user roles"""
     return {
         "roles": [
-            {"value": role.value, "label": role.value.title()}
-            for role in UserRole
+            {"value": role.value, "label": role.value.title()} for role in UserRole
         ]
     }

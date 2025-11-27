@@ -10,14 +10,11 @@ if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
         settings.DATABASE_URL,
         echo=settings.DATABASE_ECHO,
-        connect_args={"check_same_thread": False}
+        connect_args={"check_same_thread": False},
     )
 else:
     # PostgreSQL settings
-    engine = create_engine(
-        settings.DATABASE_URL,
-        echo=settings.DATABASE_ECHO
-    )
+    engine = create_engine(settings.DATABASE_URL, echo=settings.DATABASE_ECHO)
 
 
 def create_db_and_tables():

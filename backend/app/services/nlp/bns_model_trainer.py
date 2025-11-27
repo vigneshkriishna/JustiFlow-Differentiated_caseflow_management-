@@ -32,14 +32,14 @@ class BNSModelTrainer:
 
         # Download required NLTK data
         try:
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find("tokenizers/punkt")
         except LookupError:
             print("📦 Downloading NLTK data...")
-            nltk.download('punkt', quiet=True)
-            nltk.download('stopwords', quiet=True)
+            nltk.download("punkt", quiet=True)
+            nltk.download("stopwords", quiet=True)
 
         self.stemmer = PorterStemmer()
-        self.stop_words = set(stopwords.words('english'))
+        self.stop_words = set(stopwords.words("english"))
 
         # Model components
         self.vectorizer = None
@@ -54,7 +54,7 @@ class BNSModelTrainer:
         text = text.lower()
 
         # Remove special characters and digits
-        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        text = re.sub(r"[^a-zA-Z\s]", "", text)
 
         # Tokenize
         tokens = word_tokenize(text)
@@ -66,7 +66,7 @@ class BNSModelTrainer:
                 stemmed = self.stemmer.stem(token)
                 processed_tokens.append(stemmed)
 
-        return ' '.join(processed_tokens)
+        return " ".join(processed_tokens)
 
     def prepare_training_data(self) -> Tuple[List[str], List[str]]:
         """Prepare training data from real datasets or fallback to synthetic"""
@@ -86,20 +86,22 @@ class BNSModelTrainer:
             labels = []
 
             for _, row in df.iterrows():
-                processed_text = self.preprocess_text(row['text'])
+                processed_text = self.preprocess_text(row["text"])
                 texts.append(processed_text)
                 # Use first section if multiple sections
-                label = str(row['labels']).split(',')[0].strip()
+                label = str(row["labels"]).split(",")[0].strip()
                 labels.append(label)
 
-            print(f"✅ Loaded {len(texts)} real cases with {len(set(labels))} unique sections")
+            print(
+                f"✅ Loaded {len(texts)} real cases with {len(set(labels))} unique sections"
+            )
             return texts, labels
 
         # Try manual curated dataset
         manual_file = data_dir / "manual_curated_cases.json"
         if manual_file.exists():
             print("📋 Loading manual curated dataset...")
-            with open(manual_file, 'r', encoding='utf-8') as f:
+            with open(manual_file, "r", encoding="utf-8") as f:
                 cases = json.load(f)
 
             texts = []
@@ -110,7 +112,9 @@ class BNSModelTrainer:
                 texts.append(processed_text)
                 labels.append(case["sections"][0])
 
-            print(f"✅ Loaded {len(texts)} manual cases with {len(set(labels))} unique sections")
+            print(
+                f"✅ Loaded {len(texts)} manual cases with {len(set(labels))} unique sections"
+            )
             return texts, labels
 
         # Fallback to synthetic BNS data
@@ -129,14 +133,18 @@ class BNSModelTrainer:
                 texts.append(processed_text)
                 labels.append(section_number)
 
-        print(f"✅ Loaded {len(texts)} synthetic examples for {len(set(labels))} sections")
+        print(
+            f"✅ Loaded {len(texts)} synthetic examples for {len(set(labels))} sections"
+        )
         return texts, labels
 
     def create_label_encoders(self, labels: List[str]):
         """Create label encoding mappings"""
         unique_labels = sorted(set(labels))
         self.label_encoder = {label: idx for idx, label in enumerate(unique_labels)}
-        self.reverse_label_encoder = {idx: label for label, idx in self.label_encoder.items()}
+        self.reverse_label_encoder = {
+            idx: label for label, idx in self.label_encoder.items()
+        }
 
         print(f"📊 Created encoders for {len(unique_labels)} unique sections")
 
@@ -153,27 +161,39 @@ class BNSModelTrainer:
 
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
-            texts, encoded_labels, test_size=test_size, random_state=random_state, stratify=encoded_labels
+            texts,
+            encoded_labels,
+            test_size=test_size,
+            random_state=random_state,
+            stratify=encoded_labels,
         )
 
         print(f"📊 Training set: {len(X_train)} examples")
         print(f"📊 Test set: {len(X_test)} examples")
 
         # Create pipeline
-        self.pipeline = Pipeline([
-            ('tfidf', TfidfVectorizer(
-                max_features=5000,
-                ngram_range=(1, 2),  # Use unigrams and bigrams
-                min_df=2,
-                max_df=0.95,
-                sublinear_tf=True
-            )),
-            ('classifier', LogisticRegression(
-                max_iter=1000,
-                random_state=random_state,
-                class_weight='balanced'  # Handle class imbalance
-            ))
-        ])
+        self.pipeline = Pipeline(
+            [
+                (
+                    "tfidf",
+                    TfidfVectorizer(
+                        max_features=5000,
+                        ngram_range=(1, 2),  # Use unigrams and bigrams
+                        min_df=2,
+                        max_df=0.95,
+                        sublinear_tf=True,
+                    ),
+                ),
+                (
+                    "classifier",
+                    LogisticRegression(
+                        max_iter=1000,
+                        random_state=random_state,
+                        class_weight="balanced",  # Handle class imbalance
+                    ),
+                ),
+            ]
+        )
 
         # Train the model
         print("🏋️ Training model...")
@@ -188,16 +208,21 @@ class BNSModelTrainer:
 
         # Cross-validation
         cv_scores = cross_val_score(self.pipeline, texts, encoded_labels, cv=5)
-        print(f"✅ Cross-validation Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})")
+        print(
+            f"✅ Cross-validation Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std() * 2:.4f})"
+        )
 
         # Detailed classification report
         print("\n📊 Classification Report:")
-        target_names = [self.reverse_label_encoder[i] for i in range(len(self.reverse_label_encoder))]
+        target_names = [
+            self.reverse_label_encoder[i]
+            for i in range(len(self.reverse_label_encoder))
+        ]
         print(classification_report(y_test, y_pred, target_names=target_names))
 
         # Store model components
-        self.vectorizer = self.pipeline.named_steps['tfidf']
-        self.classifier = self.pipeline.named_steps['classifier']
+        self.vectorizer = self.pipeline.named_steps["tfidf"]
+        self.classifier = self.pipeline.named_steps["classifier"]
 
         return accuracy, cv_scores
 
@@ -224,14 +249,16 @@ class BNSModelTrainer:
             training_data = get_training_data()
             section_details = next(
                 (item for item in training_data if item["section"] == section_number),
-                None
+                None,
             )
 
             prediction = {
                 "section_number": section_number,
                 "confidence": float(confidence),
                 "title": section_details["title"] if section_details else "Unknown",
-                "description": section_details["description"] if section_details else "No description available"
+                "description": section_details["description"]
+                if section_details
+                else "No description available",
             }
             predictions.append(prediction)
 
@@ -246,15 +273,15 @@ class BNSModelTrainer:
         encoders_path = os.path.join(self.model_dir, f"{filename_prefix}_encoders.json")
 
         # Save model pipeline
-        with open(model_path, 'wb') as f:
+        with open(model_path, "wb") as f:
             pickle.dump(self.pipeline, f)
 
         # Save encoders
         encoders_data = {
             "label_encoder": self.label_encoder,
-            "reverse_label_encoder": self.reverse_label_encoder
+            "reverse_label_encoder": self.reverse_label_encoder,
         }
-        with open(encoders_path, 'w') as f:
+        with open(encoders_path, "w") as f:
             json.dump(encoders_data, f, indent=2)
 
         print(f"✅ Model saved to {model_path}")
@@ -271,11 +298,11 @@ class BNSModelTrainer:
             raise FileNotFoundError(f"Model file not found: {model_path}")
 
         # Load model pipeline
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             self.pipeline = pickle.load(f)
 
         # Load encoders
-        with open(encoders_path, 'r') as f:
+        with open(encoders_path, "r") as f:
             encoders_data = json.load(f)
             self.label_encoder = encoders_data["label_encoder"]
             self.reverse_label_encoder = {
@@ -283,8 +310,8 @@ class BNSModelTrainer:
             }
 
         # Extract components
-        self.vectorizer = self.pipeline.named_steps['tfidf']
-        self.classifier = self.pipeline.named_steps['classifier']
+        self.vectorizer = self.pipeline.named_steps["tfidf"]
+        self.classifier = self.pipeline.named_steps["classifier"]
 
         print(f"✅ Model loaded from {model_path}")
         return True
@@ -298,9 +325,11 @@ class BNSModelTrainer:
             "status": "Model trained",
             "num_sections": len(self.label_encoder),
             "sections_covered": list(self.label_encoder.keys()),
-            "feature_count": self.vectorizer.get_feature_names_out().shape[0] if hasattr(self.vectorizer, 'get_feature_names_out') else "Unknown",
+            "feature_count": self.vectorizer.get_feature_names_out().shape[0]
+            if hasattr(self.vectorizer, "get_feature_names_out")
+            else "Unknown",
             "algorithm": "TF-IDF + Logistic Regression",
-            "version": "1.0.0"
+            "version": "1.0.0",
         }
 
 
@@ -323,7 +352,7 @@ def train_bns_model():
         "The accused committed murder by shooting the victim with a pistol",
         "Theft of mobile phone from pocket in crowded market place",
         "Online fraud scheme defrauding investors of lakhs of rupees",
-        "Domestic violence and harassment by husband for dowry"
+        "Domestic violence and harassment by husband for dowry",
     ]
 
     for i, test_case in enumerate(test_cases, 1):
@@ -331,7 +360,9 @@ def train_bns_model():
         predictions = trainer.predict_section(test_case, top_k=2)
 
         for j, pred in enumerate(predictions, 1):
-            print(f"   {j}. Section {pred['section_number']}: {pred['title']} (Confidence: {pred['confidence']:.3f})")
+            print(
+                f"   {j}. Section {pred['section_number']}: {pred['title']} (Confidence: {pred['confidence']:.3f})"
+            )
 
     # Model info
     print(f"\n📊 Model Information:")

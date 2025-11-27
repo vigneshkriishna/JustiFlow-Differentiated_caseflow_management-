@@ -17,34 +17,49 @@ class DCMRulesEngine:
         """Initialize classification rules"""
         return {
             "fast_track_keywords": [
-                "traffic violation", "minor dispute", "simple contract",
-                "cheque bounce", "summary proceeding", "bail application",
-                "interim order", "simple divorce", "rent dispute"
+                "traffic violation",
+                "minor dispute",
+                "simple contract",
+                "cheque bounce",
+                "summary proceeding",
+                "bail application",
+                "interim order",
+                "simple divorce",
+                "rent dispute",
             ],
             "complex_track_keywords": [
-                "murder", "rape", "fraud", "corruption", "conspiracy",
-                "money laundering", "constitutional", "public interest",
-                "class action", "corporate dispute", "intellectual property",
-                "environmental", "cyber crime"
+                "murder",
+                "rape",
+                "fraud",
+                "corruption",
+                "conspiracy",
+                "money laundering",
+                "constitutional",
+                "public interest",
+                "class action",
+                "corporate dispute",
+                "intellectual property",
+                "environmental",
+                "cyber crime",
             ],
             "fast_track_case_types": [
                 # Simple cases that can be resolved quickly
             ],
             "complex_track_case_types": [
                 CaseType.CONSTITUTIONAL,
-                CaseType.COMMERCIAL  # Large commercial disputes
+                CaseType.COMMERCIAL,  # Large commercial disputes
             ],
             "priority_weights": {
                 CasePriority.URGENT: 1.5,
                 CasePriority.HIGH: 1.2,
                 CasePriority.MEDIUM: 1.0,
-                CasePriority.LOW: 0.8
+                CasePriority.LOW: 0.8,
             },
             "duration_thresholds": {
-                "fast": 120,    # <= 2 hours
-                "regular": 240, # <= 4 hours
-                "complex": 480  # > 4 hours
-            }
+                "fast": 120,  # <= 2 hours
+                "regular": 240,  # <= 4 hours
+                "complex": 480,  # > 4 hours
+            },
         }
 
     def classify_case(self, case: Case) -> CaseClassification:
@@ -71,7 +86,9 @@ class DCMRulesEngine:
                 score -= 2.0  # Negative score for fast track
 
         if fast_keywords_found:
-            reasons.append(f"Fast track keywords found: {', '.join(fast_keywords_found)}")
+            reasons.append(
+                f"Fast track keywords found: {', '.join(fast_keywords_found)}"
+            )
 
         # Check for complex track keywords
         complex_keywords_found = []
@@ -81,12 +98,16 @@ class DCMRulesEngine:
                 score += 3.0  # Positive score for complex track
 
         if complex_keywords_found:
-            reasons.append(f"Complex track keywords found: {', '.join(complex_keywords_found)}")
+            reasons.append(
+                f"Complex track keywords found: {', '.join(complex_keywords_found)}"
+            )
 
         # Case type analysis
         if case.case_type in self.rules["complex_track_case_types"]:
             score += 2.0
-            reasons.append(f"Case type '{case.case_type}' typically requires complex handling")
+            reasons.append(
+                f"Case type '{case.case_type}' typically requires complex handling"
+            )
 
         # Priority weight
         priority_weight = self.rules["priority_weights"].get(case.priority, 1.0)
@@ -113,7 +134,9 @@ class DCMRulesEngine:
         if any(word in title_lower for word in ["simple", "minor", "small"]):
             score -= 1.0
             reasons.append("Title suggests simple case")
-        elif any(word in title_lower for word in ["complex", "major", "serious", "criminal"]):
+        elif any(
+            word in title_lower for word in ["complex", "major", "serious", "criminal"]
+        ):
             score += 1.5
             reasons.append("Title suggests complex case")
 
@@ -137,7 +160,7 @@ class DCMRulesEngine:
             track=track,
             score=round(score, 2),
             reasons=reasons,
-            confidence=round(confidence, 2)
+            confidence=round(confidence, 2),
         )
 
     def batch_classify_cases(self, cases: List[Case]) -> List[CaseClassification]:
@@ -182,8 +205,12 @@ class DCMRulesEngine:
                 track: round((count / total_cases) * 100, 1) if total_cases > 0 else 0
                 for track, count in track_counts.items()
             },
-            "average_score": round(total_score / total_cases, 2) if total_cases > 0 else 0,
-            "average_confidence": round(total_confidence / total_cases, 2) if total_cases > 0 else 0
+            "average_score": round(total_score / total_cases, 2)
+            if total_cases > 0
+            else 0,
+            "average_confidence": round(total_confidence / total_cases, 2)
+            if total_cases > 0
+            else 0,
         }
 
 

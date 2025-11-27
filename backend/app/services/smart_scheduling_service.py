@@ -27,6 +27,7 @@ class SchedulingStrategy(str, Enum):
 @dataclass
 class SchedulingSlot:
     """Represents an available time slot for scheduling"""
+
     date: datetime
     start_time: time
     end_time: time
@@ -40,6 +41,7 @@ class SchedulingSlot:
 @dataclass
 class CaseSchedulingRequest:
     """Represents a case that needs to be scheduled"""
+
     case_id: int
     case_type: CaseType
     priority: CasePriority
@@ -55,17 +57,17 @@ class SmartSchedulingService:
 
     def __init__(self):
         self.working_hours_start = time(9, 0)  # 9:00 AM
-        self.working_hours_end = time(17, 0)   # 5:00 PM
+        self.working_hours_end = time(17, 0)  # 5:00 PM
         self.slot_duration = 60  # minutes per slot
-        self.lunch_break_start = time(13, 0)   # 1:00 PM
-        self.lunch_break_end = time(14, 0)     # 2:00 PM
+        self.lunch_break_start = time(13, 0)  # 1:00 PM
+        self.lunch_break_end = time(14, 0)  # 2:00 PM
 
         # Priority weights for different case types
         self.priority_weights = {
             CasePriority.URGENT: 4.0,
             CasePriority.HIGH: 3.0,
             CasePriority.MEDIUM: 2.0,
-            CasePriority.LOW: 1.0
+            CasePriority.LOW: 1.0,
         }
 
         # Complexity weights for different case types
@@ -74,11 +76,16 @@ class SmartSchedulingService:
             CaseType.COMMERCIAL: 2.5,
             CaseType.CRIMINAL: 2.0,
             CaseType.FAMILY: 1.8,
-            CaseType.CIVIL: 1.5
+            CaseType.CIVIL: 1.5,
         }
 
-    def get_available_slots(self, session: Session, start_date: datetime,
-                           end_date: datetime, bench_id: Optional[int] = None) -> List[SchedulingSlot]:
+    def get_available_slots(
+        self,
+        session: Session,
+        start_date: datetime,
+        end_date: datetime,
+        bench_id: Optional[int] = None,
+    ) -> List[SchedulingSlot]:
         """Get all available scheduling slots for the given date range"""
 
         # Get all benches if none specified
@@ -91,7 +98,7 @@ class SmartSchedulingService:
         existing_hearings = session.exec(
             select(Hearing).where(
                 Hearing.hearing_date >= start_date.date(),
-                Hearing.hearing_date <= end_date.date()
+                Hearing.hearing_date <= end_date.date(),
             )
         ).all()
 
@@ -112,20 +119,28 @@ class SmartSchedulingService:
 
             for bench in benches:
                 # Generate time slots for the day
-                current_time = datetime.combine(current_date.date(), self.working_hours_start)
+                current_time = datetime.combine(
+                    current_date.date(), self.working_hours_start
+                )
                 end_time = datetime.combine(current_date.date(), self.working_hours_end)
 
                 while current_time < end_time:
                     slot_end = current_time + timedelta(minutes=self.slot_duration)
 
                     # Skip lunch break
-                    if (current_time.time() >= self.lunch_break_start and
-                        current_time.time() < self.lunch_break_end):
-                        current_time = datetime.combine(current_date.date(), self.lunch_break_end)
+                    if (
+                        current_time.time() >= self.lunch_break_start
+                        and current_time.time() < self.lunch_break_end
+                    ):
+                        current_time = datetime.combine(
+                            current_date.date(), self.lunch_break_end
+                        )
                         continue
 
                     # Check if slot is available
-                    booking_key = f"{current_date.date()}_{bench.id}_{current_time.time()}"
+                    booking_key = (
+                        f"{current_date.date()}_{bench.id}_{current_time.time()}"
+                    )
                     is_available = booking_key not in bookings
 
                     slot = SchedulingSlot(
@@ -135,7 +150,7 @@ class SmartSchedulingService:
                         court_room=bench.court_room,
                         bench_id=bench.id,
                         estimated_duration=self.slot_duration,
-                        is_available=is_available
+                        is_available=is_available,
                     )
 
                     available_slots.append(slot)
@@ -145,7 +160,9 @@ class SmartSchedulingService:
 
         return available_slots
 
-    def calculate_case_scheduling_priority(self, case: Case, strategy: SchedulingStrategy) -> float:
+    def calculate_case_scheduling_priority(
+        self, case: Case, strategy: SchedulingStrategy
+    ) -> float:
         """Calculate scheduling priority score for a case based on strategy"""
 
         base_priority = self.priority_weights.get(case.priority, 1.0)
@@ -177,11 +194,14 @@ class SmartSchedulingService:
 
         return base_priority
 
-    def schedule_cases_optimally(self, session: Session,
-                                case_ids: List[int],
-                                start_date: datetime,
-                                end_date: datetime,
-                                strategy: SchedulingStrategy = SchedulingStrategy.BALANCED) -> Dict[str, Any]:
+    def schedule_cases_optimally(
+        self,
+        session: Session,
+        case_ids: List[int],
+        start_date: datetime,
+        end_date: datetime,
+        strategy: SchedulingStrategy = SchedulingStrategy.BALANCED,
+    ) -> Dict[str, Any]:
         """Schedule multiple cases optimally using the specified strategy"""
 
         # Get cases to schedule
@@ -195,8 +215,11 @@ class SmartSchedulingService:
             return {"error": "No valid cases to schedule"}
 
         # Get available slots
-        available_slots = [slot for slot in self.get_available_slots(session, start_date, end_date)
-                          if slot.is_available]
+        available_slots = [
+            slot
+            for slot in self.get_available_slots(session, start_date, end_date)
+            if slot.is_available
+        ]
 
         if not available_slots:
             return {"error": "No available slots in the specified date range"}
@@ -205,7 +228,9 @@ class SmartSchedulingService:
         case_priorities = []
         for case in cases:
             priority_score = self.calculate_case_scheduling_priority(case, strategy)
-            heapq.heappush(case_priorities, (-priority_score, case.id, case))  # Negative for max heap
+            heapq.heappush(
+                case_priorities, (-priority_score, case.id, case)
+            )  # Negative for max heap
 
         # Schedule cases using the chosen strategy
         scheduled_hearings = []
@@ -216,7 +241,9 @@ class SmartSchedulingService:
             _, case_id, case = heapq.heappop(case_priorities)
 
             # Find best slot for this case
-            best_slot = self._find_optimal_slot_for_case(case, available_slots[slot_index:])
+            best_slot = self._find_optimal_slot_for_case(
+                case, available_slots[slot_index:]
+            )
 
             if best_slot:
                 # Create hearing
@@ -227,7 +254,7 @@ class SmartSchedulingService:
                     "estimated_duration_minutes": case.estimated_duration_minutes or 60,
                     "bench_id": best_slot.bench_id,
                     "judge_id": 1,  # Default to first available judge for now
-                    "status": "scheduled"
+                    "status": "scheduled",
                 }
 
                 scheduled_hearings.append(hearing_data)
@@ -235,20 +262,24 @@ class SmartSchedulingService:
                 # Remove the used slot
                 available_slots.remove(best_slot)
             else:
-                unscheduled_cases.append({
-                    "case_id": case.id,
-                    "case_number": case.case_number,
-                    "reason": "No suitable slot available"
-                })
+                unscheduled_cases.append(
+                    {
+                        "case_id": case.id,
+                        "case_number": case.case_number,
+                        "reason": "No suitable slot available",
+                    }
+                )
 
         # Add remaining cases to unscheduled
         while case_priorities:
             _, case_id, case = heapq.heappop(case_priorities)
-            unscheduled_cases.append({
-                "case_id": case.id,
-                "case_number": case.case_number,
-                "reason": "Insufficient slots"
-            })
+            unscheduled_cases.append(
+                {
+                    "case_id": case.id,
+                    "case_number": case.case_number,
+                    "reason": "Insufficient slots",
+                }
+            )
 
         return {
             "status": "success",
@@ -261,15 +292,16 @@ class SmartSchedulingService:
                 "unscheduled_count": len(unscheduled_cases),
                 "success_rate": len(scheduled_hearings) / len(cases) * 100,
                 "available_slots_used": len(scheduled_hearings),
-                "remaining_slots": len(available_slots) - len(scheduled_hearings)
-            }
+                "remaining_slots": len(available_slots) - len(scheduled_hearings),
+            },
         }
 
-    def _find_optimal_slot_for_case(self, case: Case, available_slots: List[SchedulingSlot]) -> Optional[SchedulingSlot]:
+    def _find_optimal_slot_for_case(
+        self, case: Case, available_slots: List[SchedulingSlot]
+    ) -> Optional[SchedulingSlot]:
         """Find the most suitable slot for a specific case"""
         if not available_slots:
             return None
-
 
         # Score each slot for this case
         scored_slots = []
@@ -303,15 +335,15 @@ class SmartSchedulingService:
         case_type_preferences = {
             CaseType.CONSTITUTIONAL: time(10, 0),  # Complex cases in morning
             CaseType.COMMERCIAL: time(11, 0),
-            CaseType.CRIMINAL: time(9, 0),        # Urgent criminal cases early
-            CaseType.FAMILY: time(14, 0),         # Family cases post-lunch
-            CaseType.CIVIL: time(15, 0)           # Civil cases in afternoon
+            CaseType.CRIMINAL: time(9, 0),  # Urgent criminal cases early
+            CaseType.FAMILY: time(14, 0),  # Family cases post-lunch
+            CaseType.CIVIL: time(15, 0),  # Civil cases in afternoon
         }
 
         preferred_time = case_type_preferences.get(case.case_type, time(10, 0))
         time_diff = abs(
-            (slot.start_time.hour * 60 + slot.start_time.minute) -
-            (preferred_time.hour * 60 + preferred_time.minute)
+            (slot.start_time.hour * 60 + slot.start_time.minute)
+            - (preferred_time.hour * 60 + preferred_time.minute)
         )
 
         # Bonus for being close to preferred time
@@ -319,13 +351,19 @@ class SmartSchedulingService:
 
         return score
 
-    def suggest_optimal_schedule(self, session: Session, days_ahead: int = 14,
-                                strategy: SchedulingStrategy = SchedulingStrategy.BALANCED) -> Dict[str, Any]:
+    def suggest_optimal_schedule(
+        self,
+        session: Session,
+        days_ahead: int = 14,
+        strategy: SchedulingStrategy = SchedulingStrategy.BALANCED,
+    ) -> Dict[str, Any]:
         """Generate AI-powered scheduling optimization suggestions"""
 
         # Get pending cases
         pending_cases = session.exec(
-            select(Case).where(Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW]))
+            select(Case).where(
+                Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
+            )
         ).all()
 
         if not pending_cases:
@@ -335,46 +373,63 @@ class SmartSchedulingService:
         end_date = start_date + timedelta(days=days_ahead)
 
         # Analyze current schedule efficiency
-        current_efficiency = self._analyze_schedule_efficiency(session, start_date, end_date)
+        current_efficiency = self._analyze_schedule_efficiency(
+            session, start_date, end_date
+        )
 
         # Generate optimization suggestions
         suggestions = []
 
         # 1. Priority-based suggestions
-        urgent_cases = [case for case in pending_cases if case.priority == CasePriority.URGENT]
+        urgent_cases = [
+            case for case in pending_cases if case.priority == CasePriority.URGENT
+        ]
         if urgent_cases:
-            suggestions.append({
-                "type": "urgent_scheduling",
-                "priority": "high",
-                "message": f"Schedule {len(urgent_cases)} urgent cases within next 3 days",
-                "action": "immediate_scheduling",
-                "cases": [{"id": c.id, "case_number": c.case_number} for c in urgent_cases[:5]]
-            })
+            suggestions.append(
+                {
+                    "type": "urgent_scheduling",
+                    "priority": "high",
+                    "message": f"Schedule {len(urgent_cases)} urgent cases within next 3 days",
+                    "action": "immediate_scheduling",
+                    "cases": [
+                        {"id": c.id, "case_number": c.case_number}
+                        for c in urgent_cases[:5]
+                    ],
+                }
+            )
 
         # 2. Workload balancing suggestions
-        workload_analysis = self._analyze_workload_distribution(session, start_date, end_date)
+        workload_analysis = self._analyze_workload_distribution(
+            session, start_date, end_date
+        )
         if workload_analysis["imbalance_detected"]:
-            suggestions.append({
-                "type": "workload_balancing",
-                "priority": "medium",
-                "message": "Detected workload imbalance across benches",
-                "action": "redistribute_cases",
-                "details": workload_analysis
-            })
+            suggestions.append(
+                {
+                    "type": "workload_balancing",
+                    "priority": "medium",
+                    "message": "Detected workload imbalance across benches",
+                    "action": "redistribute_cases",
+                    "details": workload_analysis,
+                }
+            )
 
         # 3. Time slot optimization
         slot_utilization = self._analyze_slot_utilization(session, start_date, end_date)
         if slot_utilization["underutilized_slots"]:
-            suggestions.append({
-                "type": "slot_optimization",
-                "priority": "medium",
-                "message": f"Found {len(slot_utilization['underutilized_slots'])} underutilized time slots",
-                "action": "reschedule_for_efficiency",
-                "available_slots": slot_utilization["underutilized_slots"][:10]
-            })
+            suggestions.append(
+                {
+                    "type": "slot_optimization",
+                    "priority": "medium",
+                    "message": f"Found {len(slot_utilization['underutilized_slots'])} underutilized time slots",
+                    "action": "reschedule_for_efficiency",
+                    "available_slots": slot_utilization["underutilized_slots"][:10],
+                }
+            )
 
         # 4. Strategic scheduling recommendations
-        strategic_recommendations = self._generate_strategic_recommendations(pending_cases)
+        strategic_recommendations = self._generate_strategic_recommendations(
+            pending_cases
+        )
         suggestions.extend(strategic_recommendations)
 
         return {
@@ -383,7 +438,7 @@ class SmartSchedulingService:
             "current_efficiency": current_efficiency,
             "optimization_suggestions": suggestions,
             "total_pending_cases": len(pending_cases),
-            "recommended_strategy": self._recommend_best_strategy(pending_cases)
+            "recommended_strategy": self._recommend_best_strategy(pending_cases),
         }
 
     def analyze_scheduling_conflicts(self, session: Session) -> Dict[str, Any]:
@@ -396,7 +451,7 @@ class SmartSchedulingService:
         hearings = session.exec(
             select(Hearing).where(
                 Hearing.hearing_date >= start_date.date(),
-                Hearing.hearing_date <= end_date.date()
+                Hearing.hearing_date <= end_date.date(),
             )
         ).all()
 
@@ -404,74 +459,88 @@ class SmartSchedulingService:
 
         # Check for time conflicts
         for i, hearing1 in enumerate(hearings):
-            for j, hearing2 in enumerate(hearings[i+1:], i+1):
+            for j, hearing2 in enumerate(hearings[i + 1 :], i + 1):
                 if self._check_hearing_conflict(hearing1, hearing2):
-                    conflicts.append({
-                        "type": "time_conflict",
-                        "severity": "high",
-                        "hearing1": {
-                            "id": hearing1.id,
-                            "case_id": hearing1.case_id,
-                            "scheduled_time": hearing1.hearing_date.isoformat()
-                        },
-                        "hearing2": {
-                            "id": hearing2.id,
-                            "case_id": hearing2.case_id,
-                            "scheduled_time": hearing2.hearing_date.isoformat()
-                        },
-                        "reason": "Overlapping time slots"
-                    })
+                    conflicts.append(
+                        {
+                            "type": "time_conflict",
+                            "severity": "high",
+                            "hearing1": {
+                                "id": hearing1.id,
+                                "case_id": hearing1.case_id,
+                                "scheduled_time": hearing1.hearing_date.isoformat(),
+                            },
+                            "hearing2": {
+                                "id": hearing2.id,
+                                "case_id": hearing2.case_id,
+                                "scheduled_time": hearing2.hearing_date.isoformat(),
+                            },
+                            "reason": "Overlapping time slots",
+                        }
+                    )
 
         # Analyze capacity utilization
-        capacity_analysis = self._analyze_capacity_utilization(session, start_date, end_date)
+        capacity_analysis = self._analyze_capacity_utilization(
+            session, start_date, end_date
+        )
 
         # Generate recommendations
         recommendations = []
 
         if conflicts:
-            recommendations.append({
-                "type": "resolve_conflicts",
-                "priority": "urgent",
-                "message": f"Resolve {len(conflicts)} scheduling conflicts immediately",
-                "action": "manual_review_required"
-            })
+            recommendations.append(
+                {
+                    "type": "resolve_conflicts",
+                    "priority": "urgent",
+                    "message": f"Resolve {len(conflicts)} scheduling conflicts immediately",
+                    "action": "manual_review_required",
+                }
+            )
 
         if capacity_analysis["utilization_rate"] > 0.9:
-            recommendations.append({
-                "type": "capacity_warning",
-                "priority": "high",
-                "message": "Court capacity approaching maximum. Consider additional resources.",
-                "action": "increase_capacity"
-            })
+            recommendations.append(
+                {
+                    "type": "capacity_warning",
+                    "priority": "high",
+                    "message": "Court capacity approaching maximum. Consider additional resources.",
+                    "action": "increase_capacity",
+                }
+            )
 
         if capacity_analysis["utilization_rate"] < 0.6:
-            recommendations.append({
-                "type": "underutilization",
-                "priority": "medium",
-                "message": "Court resources underutilized. Opportunity for more scheduling.",
-                "action": "increase_scheduling"
-            })
+            recommendations.append(
+                {
+                    "type": "underutilization",
+                    "priority": "medium",
+                    "message": "Court resources underutilized. Opportunity for more scheduling.",
+                    "action": "increase_scheduling",
+                }
+            )
 
         return {
             "status": "success",
             "analysis_date": datetime.now().isoformat(),
             "conflicts": {
                 "total_conflicts": len(conflicts),
-                "time_conflicts": len([c for c in conflicts if c["type"] == "time_conflict"]),
-                "details": conflicts
+                "time_conflicts": len(
+                    [c for c in conflicts if c["type"] == "time_conflict"]
+                ),
+                "details": conflicts,
             },
             "capacity_analysis": capacity_analysis,
-            "recommendations": recommendations
+            "recommendations": recommendations,
         }
 
     # Helper methods for advanced analytics
-    def _analyze_schedule_efficiency(self, session: Session, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    def _analyze_schedule_efficiency(
+        self, session: Session, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Analyze current schedule efficiency metrics"""
 
         hearings = session.exec(
             select(Hearing).where(
                 Hearing.hearing_date >= start_date.date(),
-                Hearing.hearing_date <= end_date.date()
+                Hearing.hearing_date <= end_date.date(),
             )
         ).all()
 
@@ -482,16 +551,20 @@ class SmartSchedulingService:
             "utilization_rate": scheduled_slots / total_slots if total_slots > 0 else 0,
             "total_available_slots": total_slots,
             "scheduled_slots": scheduled_slots,
-            "efficiency_score": min(1.0, scheduled_slots / (total_slots * 0.8))  # 80% is optimal
+            "efficiency_score": min(
+                1.0, scheduled_slots / (total_slots * 0.8)
+            ),  # 80% is optimal
         }
 
-    def _analyze_workload_distribution(self, session: Session, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    def _analyze_workload_distribution(
+        self, session: Session, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Analyze workload distribution across benches and judges"""
 
         hearings = session.exec(
             select(Hearing).where(
                 Hearing.hearing_date >= start_date.date(),
-                Hearing.hearing_date <= end_date.date()
+                Hearing.hearing_date <= end_date.date(),
             )
         ).all()
 
@@ -499,15 +572,21 @@ class SmartSchedulingService:
         judge_workload = {}
 
         for hearing in hearings:
-            bench_workload[hearing.bench_id] = bench_workload.get(hearing.bench_id, 0) + 1
-            if hasattr(hearing, 'judge_id') and hearing.judge_id:
-                judge_workload[hearing.judge_id] = judge_workload.get(hearing.judge_id, 0) + 1
+            bench_workload[hearing.bench_id] = (
+                bench_workload.get(hearing.bench_id, 0) + 1
+            )
+            if hasattr(hearing, "judge_id") and hearing.judge_id:
+                judge_workload[hearing.judge_id] = (
+                    judge_workload.get(hearing.judge_id, 0) + 1
+                )
 
         # Calculate standard deviation to detect imbalance
         if bench_workload:
             bench_values = list(bench_workload.values())
             bench_avg = sum(bench_values) / len(bench_values)
-            bench_std = (sum((x - bench_avg) ** 2 for x in bench_values) / len(bench_values)) ** 0.5
+            bench_std = (
+                sum((x - bench_avg) ** 2 for x in bench_values) / len(bench_values)
+            ) ** 0.5
 
             imbalance_detected = bench_std > bench_avg * 0.3  # 30% threshold
         else:
@@ -517,10 +596,14 @@ class SmartSchedulingService:
             "bench_distribution": bench_workload,
             "judge_distribution": judge_workload,
             "imbalance_detected": imbalance_detected,
-            "recommendation": "redistribute_cases" if imbalance_detected else "maintain_current"
+            "recommendation": "redistribute_cases"
+            if imbalance_detected
+            else "maintain_current",
         }
 
-    def _analyze_slot_utilization(self, session: Session, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    def _analyze_slot_utilization(
+        self, session: Session, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Analyze time slot utilization patterns"""
 
         available_slots = self.get_available_slots(session, start_date, end_date)
@@ -528,18 +611,24 @@ class SmartSchedulingService:
 
         # Find time patterns
         morning_slots = [s for s in underutilized_slots if s.start_time < time(12, 0)]
-        afternoon_slots = [s for s in underutilized_slots if s.start_time >= time(14, 0)]
+        afternoon_slots = [
+            s for s in underutilized_slots if s.start_time >= time(14, 0)
+        ]
 
         return {
             "underutilized_slots": underutilized_slots,
             "patterns": {
                 "morning_availability": len(morning_slots),
                 "afternoon_availability": len(afternoon_slots),
-                "peak_available_time": self._find_peak_available_time(underutilized_slots)
-            }
+                "peak_available_time": self._find_peak_available_time(
+                    underutilized_slots
+                ),
+            },
         }
 
-    def _generate_strategic_recommendations(self, pending_cases: List[Case]) -> List[Dict[str, Any]]:
+    def _generate_strategic_recommendations(
+        self, pending_cases: List[Case]
+    ) -> List[Dict[str, Any]]:
         """Generate strategic scheduling recommendations based on case analysis"""
 
         recommendations = []
@@ -547,26 +636,34 @@ class SmartSchedulingService:
         # Analyze case types
         case_type_counts = {}
         for case in pending_cases:
-            case_type_counts[case.case_type] = case_type_counts.get(case.case_type, 0) + 1
+            case_type_counts[case.case_type] = (
+                case_type_counts.get(case.case_type, 0) + 1
+            )
 
         # Check for case type clustering opportunities
         if case_type_counts.get(CaseType.COMMERCIAL, 0) >= 3:
-            recommendations.append({
-                "type": "case_clustering",
-                "priority": "low",
-                "message": f"Consider clustering {case_type_counts[CaseType.COMMERCIAL]} commercial cases for efficiency",
-                "action": "schedule_similar_cases_together"
-            })
+            recommendations.append(
+                {
+                    "type": "case_clustering",
+                    "priority": "low",
+                    "message": f"Consider clustering {case_type_counts[CaseType.COMMERCIAL]} commercial cases for efficiency",
+                    "action": "schedule_similar_cases_together",
+                }
+            )
 
         # Check for urgent case accumulation
-        urgent_count = len([c for c in pending_cases if c.priority == CasePriority.URGENT])
+        urgent_count = len(
+            [c for c in pending_cases if c.priority == CasePriority.URGENT]
+        )
         if urgent_count > 5:
-            recommendations.append({
-                "type": "urgent_backlog",
-                "priority": "high",
-                "message": f"High urgent case backlog ({urgent_count} cases). Consider emergency scheduling.",
-                "action": "emergency_scheduling_session"
-            })
+            recommendations.append(
+                {
+                    "type": "urgent_backlog",
+                    "priority": "high",
+                    "message": f"High urgent case backlog ({urgent_count} cases). Consider emergency scheduling.",
+                    "action": "emergency_scheduling_session",
+                }
+            )
 
         return recommendations
 
@@ -576,8 +673,12 @@ class SmartSchedulingService:
         if not pending_cases:
             return SchedulingStrategy.BALANCED.value
 
-        urgent_count = len([c for c in pending_cases if c.priority == CasePriority.URGENT])
-        old_cases = len([c for c in pending_cases if (datetime.now() - c.created_at).days > 30])
+        urgent_count = len(
+            [c for c in pending_cases if c.priority == CasePriority.URGENT]
+        )
+        old_cases = len(
+            [c for c in pending_cases if (datetime.now() - c.created_at).days > 30]
+        )
 
         # Decision logic
         if urgent_count > len(pending_cases) * 0.3:  # More than 30% urgent
@@ -587,7 +688,9 @@ class SmartSchedulingService:
         else:
             return SchedulingStrategy.BALANCED.value
 
-    def _calculate_total_available_slots(self, start_date: datetime, end_date: datetime) -> int:
+    def _calculate_total_available_slots(
+        self, start_date: datetime, end_date: datetime
+    ) -> int:
         """Calculate total theoretical available slots in date range"""
 
         total_days = (end_date - start_date).days
@@ -606,21 +709,28 @@ class SmartSchedulingService:
         """Check if two hearings have scheduling conflicts"""
 
         # Same date and bench conflict
-        if (hearing1.hearing_date == hearing2.hearing_date and
-            hearing1.bench_id == hearing2.bench_id):
-
+        if (
+            hearing1.hearing_date == hearing2.hearing_date
+            and hearing1.bench_id == hearing2.bench_id
+        ):
             # Check time overlap
             h1_start = datetime.combine(hearing1.hearing_date, hearing1.start_time)
-            h1_end = h1_start + timedelta(minutes=hearing1.estimated_duration_minutes or 60)
+            h1_end = h1_start + timedelta(
+                minutes=hearing1.estimated_duration_minutes or 60
+            )
 
             h2_start = datetime.combine(hearing2.hearing_date, hearing2.start_time)
-            h2_end = h2_start + timedelta(minutes=hearing2.estimated_duration_minutes or 60)
+            h2_end = h2_start + timedelta(
+                minutes=hearing2.estimated_duration_minutes or 60
+            )
 
             return not (h1_end <= h2_start or h2_end <= h1_start)
 
         return False
 
-    def _analyze_capacity_utilization(self, session: Session, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+    def _analyze_capacity_utilization(
+        self, session: Session, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
         """Analyze overall capacity utilization"""
 
         total_slots = self._calculate_total_available_slots(start_date, end_date)
@@ -628,7 +738,7 @@ class SmartSchedulingService:
         hearings = session.exec(
             select(Hearing).where(
                 Hearing.hearing_date >= start_date.date(),
-                Hearing.hearing_date <= end_date.date()
+                Hearing.hearing_date <= end_date.date(),
             )
         ).all()
 
@@ -640,8 +750,11 @@ class SmartSchedulingService:
             "total_capacity": total_slots,
             "scheduled_slots": scheduled_slots,
             "available_slots": total_slots - scheduled_slots,
-            "status": "optimal" if 0.7 <= utilization_rate <= 0.9 else
-                     "underutilized" if utilization_rate < 0.7 else "overutilized"
+            "status": "optimal"
+            if 0.7 <= utilization_rate <= 0.9
+            else "underutilized"
+            if utilization_rate < 0.7
+            else "overutilized",
         }
 
     def _find_peak_available_time(self, slots: List[SchedulingSlot]) -> str:
@@ -653,7 +766,7 @@ class SmartSchedulingService:
         time_periods = {
             "morning": len([s for s in slots if s.start_time < time(12, 0)]),
             "afternoon": len([s for s in slots if s.start_time >= time(14, 0)]),
-            "early_morning": len([s for s in slots if s.start_time < time(11, 0)])
+            "early_morning": len([s for s in slots if s.start_time < time(11, 0)]),
         }
 
         return max(time_periods, key=time_periods.get)
@@ -663,10 +776,10 @@ class SmartSchedulingService:
 
         base_durations = {
             CaseType.CONSTITUTIONAL: 180,  # 3 hours
-            CaseType.COMMERCIAL: 120,     # 2 hours
-            CaseType.CRIMINAL: 90,        # 1.5 hours
-            CaseType.FAMILY: 75,          # 1.25 hours
-            CaseType.CIVIL: 60            # 1 hour
+            CaseType.COMMERCIAL: 120,  # 2 hours
+            CaseType.CRIMINAL: 90,  # 1.5 hours
+            CaseType.FAMILY: 75,  # 1.25 hours
+            CaseType.CIVIL: 60,  # 1 hour
         }
 
         base_duration = base_durations.get(case.case_type, 60)
@@ -690,7 +803,7 @@ class SmartSchedulingService:
                 case_type=case.case_type,
                 priority=case.priority,
                 estimated_duration=estimated_duration,
-                complexity_score=priority_score
+                complexity_score=priority_score,
             )
             scheduling_requests.append(request)
 
@@ -702,7 +815,9 @@ class SmartSchedulingService:
         used_slots = set()
 
         for request in scheduling_requests:
-            best_slot = self._find_best_slot(request, available_slots, used_slots, strategy)
+            best_slot = self._find_best_slot(
+                request, available_slots, used_slots, strategy
+            )
 
             if best_slot:
                 # Create hearing
@@ -712,15 +827,17 @@ class SmartSchedulingService:
                     scheduled_date=best_slot.date,
                     scheduled_time=best_slot.start_time,
                     estimated_duration=request.estimated_duration,
-                    status="scheduled"
+                    status="scheduled",
                 )
 
-                scheduled_hearings.append({
-                    "hearing": hearing,
-                    "slot": best_slot,
-                    "case_id": request.case_id,
-                    "priority_score": request.complexity_score
-                })
+                scheduled_hearings.append(
+                    {
+                        "hearing": hearing,
+                        "slot": best_slot,
+                        "case_id": request.case_id,
+                        "priority_score": request.complexity_score,
+                    }
+                )
 
                 # Mark slot as used
                 slot_key = f"{best_slot.date.date()}_{best_slot.bench_id}_{best_slot.start_time}"
@@ -744,20 +861,32 @@ class SmartSchedulingService:
                     "date": s["slot"].date.isoformat(),
                     "time": s["slot"].start_time.isoformat(),
                     "court_room": s["slot"].court_room,
-                    "priority_score": round(s["priority_score"], 2)
+                    "priority_score": round(s["priority_score"], 2),
                 }
                 for s in scheduled_hearings
             ],
             "optimization_metrics": {
-                "average_priority_score": sum(s["priority_score"] for s in scheduled_hearings) / len(scheduled_hearings) if scheduled_hearings else 0,
-                "court_utilization": len(scheduled_hearings) / len(available_slots) * 100 if available_slots else 0,
-                "scheduling_efficiency": len(scheduled_hearings) / len(cases) * 100
-            }
+                "average_priority_score": sum(
+                    s["priority_score"] for s in scheduled_hearings
+                )
+                / len(scheduled_hearings)
+                if scheduled_hearings
+                else 0,
+                "court_utilization": len(scheduled_hearings)
+                / len(available_slots)
+                * 100
+                if available_slots
+                else 0,
+                "scheduling_efficiency": len(scheduled_hearings) / len(cases) * 100,
+            },
         }
 
-    def suggest_optimal_schedule(self, session: Session,
-                               days_ahead: int = 14,
-                               strategy: SchedulingStrategy = SchedulingStrategy.BALANCED) -> Dict[str, Any]:
+    def suggest_optimal_schedule(
+        self,
+        session: Session,
+        days_ahead: int = 14,
+        strategy: SchedulingStrategy = SchedulingStrategy.BALANCED,
+    ) -> Dict[str, Any]:
         """Suggest optimal schedule for pending cases in the next specified days"""
 
         # Get all cases that need scheduling
@@ -789,36 +918,50 @@ class SmartSchedulingService:
         overlaps = []
 
         for i, hearing1 in enumerate(hearings):
-            for hearing2 in hearings[i+1:]:
+            for hearing2 in hearings[i + 1 :]:
                 # Check for same time slot conflicts
-                if (hearing1.scheduled_date == hearing2.scheduled_date and
-                    hearing1.scheduled_time == hearing2.scheduled_time and
-                    hearing1.bench_id == hearing2.bench_id):
-
-                    conflicts.append({
-                        "type": "double_booking",
-                        "hearing1_id": hearing1.id,
-                        "hearing2_id": hearing2.id,
-                        "date": hearing1.scheduled_date.isoformat(),
-                        "time": hearing1.scheduled_time.isoformat(),
-                        "court_room": hearing1.bench.court_room if hearing1.bench else "Unknown"
-                    })
-
-                # Check for overlapping time periods
-                if (hearing1.scheduled_date == hearing2.scheduled_date and
-                    hearing1.bench_id == hearing2.bench_id):
-
-                    end_time1 = (datetime.combine(hearing1.scheduled_date, hearing1.scheduled_time) +
-                                timedelta(minutes=hearing1.estimated_duration or 60))
-                    start_time2 = datetime.combine(hearing2.scheduled_date, hearing2.scheduled_time)
-
-                    if start_time2 < end_time1:
-                        overlaps.append({
-                            "type": "time_overlap",
+                if (
+                    hearing1.scheduled_date == hearing2.scheduled_date
+                    and hearing1.scheduled_time == hearing2.scheduled_time
+                    and hearing1.bench_id == hearing2.bench_id
+                ):
+                    conflicts.append(
+                        {
+                            "type": "double_booking",
                             "hearing1_id": hearing1.id,
                             "hearing2_id": hearing2.id,
-                            "overlap_duration": (end_time1 - start_time2).total_seconds() / 60
-                        })
+                            "date": hearing1.scheduled_date.isoformat(),
+                            "time": hearing1.scheduled_time.isoformat(),
+                            "court_room": hearing1.bench.court_room
+                            if hearing1.bench
+                            else "Unknown",
+                        }
+                    )
+
+                # Check for overlapping time periods
+                if (
+                    hearing1.scheduled_date == hearing2.scheduled_date
+                    and hearing1.bench_id == hearing2.bench_id
+                ):
+                    end_time1 = datetime.combine(
+                        hearing1.scheduled_date, hearing1.scheduled_time
+                    ) + timedelta(minutes=hearing1.estimated_duration or 60)
+                    start_time2 = datetime.combine(
+                        hearing2.scheduled_date, hearing2.scheduled_time
+                    )
+
+                    if start_time2 < end_time1:
+                        overlaps.append(
+                            {
+                                "type": "time_overlap",
+                                "hearing1_id": hearing1.id,
+                                "hearing2_id": hearing2.id,
+                                "overlap_duration": (
+                                    end_time1 - start_time2
+                                ).total_seconds()
+                                / 60,
+                            }
+                        )
 
         # Analyze resource utilization
         bench_utilization = {}
@@ -833,13 +976,15 @@ class SmartSchedulingService:
                 "total_conflicts": len(conflicts),
                 "total_overlaps": len(overlaps),
                 "conflicts": conflicts,
-                "overlaps": overlaps
+                "overlaps": overlaps,
             },
             "resource_utilization": {
                 "bench_utilization": {
                     bench_id: {
                         "hearing_count": len(hearings_list),
-                        "utilization_percentage": len(hearings_list) / 40 * 100  # Assuming 40 slots per week
+                        "utilization_percentage": len(hearings_list)
+                        / 40
+                        * 100,  # Assuming 40 slots per week
                     }
                     for bench_id, hearings_list in bench_utilization.items()
                 }
@@ -847,8 +992,8 @@ class SmartSchedulingService:
             "recommendations": [
                 "Consider adding more time slots for high-utilization benches",
                 "Implement buffer time between hearings to prevent overlaps",
-                "Review case duration estimates for better scheduling"
-            ]
+                "Review case duration estimates for better scheduling",
+            ],
         }
 
     def _estimate_case_duration(self, case: Case) -> int:
@@ -856,10 +1001,10 @@ class SmartSchedulingService:
 
         base_durations = {
             CaseType.CONSTITUTIONAL: 120,  # 2 hours
-            CaseType.COMMERCIAL: 90,       # 1.5 hours
-            CaseType.CRIMINAL: 75,         # 1.25 hours
-            CaseType.FAMILY: 60,           # 1 hour
-            CaseType.CIVIL: 60             # 1 hour
+            CaseType.COMMERCIAL: 90,  # 1.5 hours
+            CaseType.CRIMINAL: 75,  # 1.25 hours
+            CaseType.FAMILY: 60,  # 1 hour
+            CaseType.CIVIL: 60,  # 1 hour
         }
 
         base_duration = base_durations.get(case.case_type, 60)
@@ -869,7 +1014,7 @@ class SmartSchedulingService:
             CasePriority.URGENT: 1.5,
             CasePriority.HIGH: 1.2,
             CasePriority.MEDIUM: 1.0,
-            CasePriority.LOW: 0.8
+            CasePriority.LOW: 0.8,
         }
 
         multiplier = priority_multipliers.get(case.priority, 1.0)
@@ -882,9 +1027,13 @@ class SmartSchedulingService:
 
         return int(base_duration * multiplier)
 
-    def _find_best_slot(self, request: CaseSchedulingRequest,
-                       available_slots: List[SchedulingSlot],
-                       used_slots: set, strategy: SchedulingStrategy) -> Optional[SchedulingSlot]:
+    def _find_best_slot(
+        self,
+        request: CaseSchedulingRequest,
+        available_slots: List[SchedulingSlot],
+        used_slots: set,
+        strategy: SchedulingStrategy,
+    ) -> Optional[SchedulingSlot]:
         """Find the best available slot for a case based on strategy"""
 
         eligible_slots = []
@@ -903,8 +1052,12 @@ class SmartSchedulingService:
         eligible_slots.sort(key=lambda x: x[0], reverse=True)
         return eligible_slots[0][1]
 
-    def _calculate_slot_score(self, request: CaseSchedulingRequest,
-                            slot: SchedulingSlot, strategy: SchedulingStrategy) -> float:
+    def _calculate_slot_score(
+        self,
+        request: CaseSchedulingRequest,
+        slot: SchedulingSlot,
+        strategy: SchedulingStrategy,
+    ) -> float:
         """Calculate how well a slot matches a case scheduling request"""
 
         score = 0.0

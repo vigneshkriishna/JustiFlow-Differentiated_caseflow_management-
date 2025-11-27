@@ -11,19 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     
     services:
-      postgres:
-        image: postgres:15
+      mongodb:
+        image: mongo:7
         env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_USER: test_user
-          POSTGRES_DB: test_dcm
+          MONGO_INITDB_ROOT_USERNAME: test_user
+          MONGO_INITDB_ROOT_PASSWORD: test_password
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 27017:27017
 
     steps:
     - uses: actions/checkout@v4
@@ -66,7 +65,7 @@ jobs:
     - name: Test with pytest
       working-directory: ./backend
       env:
-        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_dcm
+        MONGODB_URL: mongodb://test_user:test_password@localhost:27017/test_dcm?authSource=admin
         SECRET_KEY: test-secret-key-for-ci
         ACCESS_TOKEN_EXPIRE_MINUTES: 30
       run: |

@@ -31,7 +31,7 @@ class AuditService:
         description: Optional[str] = None,
         case_id: Optional[int] = None,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """
         Log an auditable action
@@ -68,7 +68,7 @@ class AuditService:
             case_id=case_id,
             ip_address=ip_address,
             user_agent=user_agent,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
         session.add(audit_log)
@@ -84,7 +84,7 @@ class AuditService:
         case_data: Dict[str, Any],
         case_id: int,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log case creation"""
         return self.log_action(
@@ -97,7 +97,7 @@ class AuditService:
             description=f"Case {case_data.get('case_number')} created",
             case_id=case_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_case_update(
@@ -108,7 +108,7 @@ class AuditService:
         before_data: Dict[str, Any],
         after_data: Dict[str, Any],
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log case update"""
         # Identify what changed
@@ -119,7 +119,9 @@ class AuditService:
             if before_val != after_val:
                 changes.append(f"{key}: {before_val} → {after_val}")
 
-        description = f"Case updated: {', '.join(changes)}" if changes else "Case updated"
+        description = (
+            f"Case updated: {', '.join(changes)}" if changes else "Case updated"
+        )
 
         return self.log_action(
             session=session,
@@ -132,7 +134,7 @@ class AuditService:
             description=description,
             case_id=case_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_case_classification(
@@ -142,7 +144,7 @@ class AuditService:
         case_id: int,
         classification_result: Dict[str, Any],
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log case classification"""
         return self.log_action(
@@ -155,7 +157,7 @@ class AuditService:
             description=f"Case classified as {classification_result.get('track')} track",
             case_id=case_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_track_override(
@@ -167,7 +169,7 @@ class AuditService:
         new_track: str,
         reason: str,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log track override by judge"""
         return self.log_action(
@@ -181,7 +183,7 @@ class AuditService:
             description=f"Track overridden from {old_track} to {new_track}: {reason}",
             case_id=case_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_hearing_scheduled(
@@ -192,7 +194,7 @@ class AuditService:
         hearing_id: int,
         case_id: int,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log hearing scheduling"""
         return self.log_action(
@@ -205,7 +207,7 @@ class AuditService:
             description=f"Hearing scheduled for case on {hearing_data.get('hearing_date')}",
             case_id=case_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_user_login(
@@ -213,7 +215,7 @@ class AuditService:
         session: Session,
         user: User,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log user login"""
         return self.log_action(
@@ -224,7 +226,7 @@ class AuditService:
             resource_id=user.id,
             description=f"User {user.username} logged in",
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_user_logout(
@@ -232,7 +234,7 @@ class AuditService:
         session: Session,
         user: User,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log user logout"""
         return self.log_action(
@@ -243,7 +245,7 @@ class AuditService:
             resource_id=user.id,
             description=f"User {user.username} logged out",
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def log_report_generation(
@@ -253,7 +255,7 @@ class AuditService:
         report_type: str,
         report_params: Dict[str, Any],
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
     ) -> AuditLog:
         """Log report generation"""
         return self.log_action(
@@ -264,7 +266,7 @@ class AuditService:
             after_data={"report_type": report_type, "parameters": report_params},
             description=f"Generated {report_type} report",
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     def get_audit_trail(
@@ -277,7 +279,7 @@ class AuditService:
         action: Optional[AuditAction] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
-        limit: int = 100
+        limit: int = 100,
     ) -> List[AuditLog]:
         """
         Get audit trail with filtering options
@@ -319,11 +321,7 @@ class AuditService:
 
         return list(session.exec(statement).all())
 
-    def get_case_audit_summary(
-        self,
-        session: Session,
-        case_id: int
-    ) -> Dict[str, Any]:
+    def get_case_audit_summary(self, session: Session, case_id: int) -> Dict[str, Any]:
         """
         Get audit summary for a specific case
 
@@ -357,13 +355,17 @@ class AuditService:
             "first_action": {
                 "action": first_action.action.value,
                 "user_id": first_action.user_id,
-                "timestamp": first_action.created_at
-            } if first_action else None,
+                "timestamp": first_action.created_at,
+            }
+            if first_action
+            else None,
             "last_action": {
                 "action": last_action.action.value,
                 "user_id": last_action.user_id,
-                "timestamp": last_action.created_at
-            } if last_action else None
+                "timestamp": last_action.created_at,
+            }
+            if last_action
+            else None,
         }
 
 

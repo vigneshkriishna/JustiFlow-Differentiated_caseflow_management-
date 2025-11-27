@@ -21,60 +21,189 @@ class CaseIngestionService:
     # Keywords for case type detection
     CASE_TYPE_KEYWORDS = {
         "CRIMINAL": [
-            "theft", "murder", "assault", "robbery", "kidnapping", "rape",
-            "section 302", "section 376", "section 304", "fir", "police",
-            "criminal", "accused", "arrest", "bail", "custody", "ipc",
-            "bns", "section 303", "section 309", "dacoity", "burglary",
-            "drugs", "narcotics", "ndps", "weapon", "gun", "knife"
+            "theft",
+            "murder",
+            "assault",
+            "robbery",
+            "kidnapping",
+            "rape",
+            "section 302",
+            "section 376",
+            "section 304",
+            "fir",
+            "police",
+            "criminal",
+            "accused",
+            "arrest",
+            "bail",
+            "custody",
+            "ipc",
+            "bns",
+            "section 303",
+            "section 309",
+            "dacoity",
+            "burglary",
+            "drugs",
+            "narcotics",
+            "ndps",
+            "weapon",
+            "gun",
+            "knife",
         ],
         "CIVIL": [
-            "property", "contract", "agreement", "plaintiff", "defendant",
-            "damages", "compensation", "breach", "injunction", "specific performance",
-            "suit", "civil", "decree", "partition", "easement", "title",
-            "ownership", "possession", "eviction", "rent", "lease", "tort",
-            "negligence", "defamation", "nuisance"
+            "property",
+            "contract",
+            "agreement",
+            "plaintiff",
+            "defendant",
+            "damages",
+            "compensation",
+            "breach",
+            "injunction",
+            "specific performance",
+            "suit",
+            "civil",
+            "decree",
+            "partition",
+            "easement",
+            "title",
+            "ownership",
+            "possession",
+            "eviction",
+            "rent",
+            "lease",
+            "tort",
+            "negligence",
+            "defamation",
+            "nuisance",
         ],
         "FAMILY": [
-            "divorce", "custody", "maintenance", "alimony", "marriage",
-            "matrimonial", "husband", "wife", "child", "adoption", "guardianship",
-            "dowry", "domestic violence", "cruelty", "section 498a", "family",
-            "visitation", "separation", "annulment", "spouse"
+            "divorce",
+            "custody",
+            "maintenance",
+            "alimony",
+            "marriage",
+            "matrimonial",
+            "husband",
+            "wife",
+            "child",
+            "adoption",
+            "guardianship",
+            "dowry",
+            "domestic violence",
+            "cruelty",
+            "section 498a",
+            "family",
+            "visitation",
+            "separation",
+            "annulment",
+            "spouse",
         ],
         "COMMERCIAL": [
-            "company", "corporate", "partnership", "business", "commercial",
-            "trademark", "copyright", "patent", "intellectual property",
-            "arbitration", "contract", "joint venture", "merger", "acquisition",
-            "shares", "shareholders", "directors", "insolvency", "bankruptcy",
-            "debt recovery", "loan", "bank", "financial", "tax", "gst"
+            "company",
+            "corporate",
+            "partnership",
+            "business",
+            "commercial",
+            "trademark",
+            "copyright",
+            "patent",
+            "intellectual property",
+            "arbitration",
+            "contract",
+            "joint venture",
+            "merger",
+            "acquisition",
+            "shares",
+            "shareholders",
+            "directors",
+            "insolvency",
+            "bankruptcy",
+            "debt recovery",
+            "loan",
+            "bank",
+            "financial",
+            "tax",
+            "gst",
         ],
         "CONSTITUTIONAL": [
-            "fundamental rights", "article", "constitution", "writ", "pil",
-            "public interest litigation", "habeas corpus", "mandamus", "certiorari",
-            "prohibition", "quo warranto", "constitutional", "supreme court",
-            "high court", "judicial review", "ultra vires"
-        ]
+            "fundamental rights",
+            "article",
+            "constitution",
+            "writ",
+            "pil",
+            "public interest litigation",
+            "habeas corpus",
+            "mandamus",
+            "certiorari",
+            "prohibition",
+            "quo warranto",
+            "constitutional",
+            "supreme court",
+            "high court",
+            "judicial review",
+            "ultra vires",
+        ],
     }
 
     # Keywords for priority detection
     PRIORITY_KEYWORDS = {
         "URGENT": [
-            "murder", "rape", "kidnapping", "life threatening", "armed robbery",
-            "terrorism", "urgent", "immediate", "emergency", "critical",
-            "death", "serious injury", "weapon", "child abuse", "trafficking"
+            "murder",
+            "rape",
+            "kidnapping",
+            "life threatening",
+            "armed robbery",
+            "terrorism",
+            "urgent",
+            "immediate",
+            "emergency",
+            "critical",
+            "death",
+            "serious injury",
+            "weapon",
+            "child abuse",
+            "trafficking",
         ],
         "HIGH": [
-            "assault", "fraud", "cheating", "forgery", "bribery", "corruption",
-            "domestic violence", "sexual harassment", "high value", "significant",
-            "major", "substantial", "grievous hurt", "custodial", "habeas corpus"
+            "assault",
+            "fraud",
+            "cheating",
+            "forgery",
+            "bribery",
+            "corruption",
+            "domestic violence",
+            "sexual harassment",
+            "high value",
+            "significant",
+            "major",
+            "substantial",
+            "grievous hurt",
+            "custodial",
+            "habeas corpus",
         ],
         "MEDIUM": [
-            "theft", "property dispute", "contract breach", "defamation",
-            "trespass", "eviction", "maintenance", "moderate", "regular"
+            "theft",
+            "property dispute",
+            "contract breach",
+            "defamation",
+            "trespass",
+            "eviction",
+            "maintenance",
+            "moderate",
+            "regular",
         ],
         "LOW": [
-            "minor", "petty", "small claim", "routine", "simple", "uncontested",
-            "mutual consent", "minimal", "nominal"
-        ]
+            "minor",
+            "petty",
+            "small claim",
+            "routine",
+            "simple",
+            "uncontested",
+            "mutual consent",
+            "minimal",
+            "nominal",
+        ],
     }
 
     # BNS Section patterns
@@ -92,8 +221,11 @@ class CaseIngestionService:
 
     def __init__(self):
         """Initialize the ingestion service"""
-        mongo_uri = settings.MONGODB_URL if settings.MONGODB_URL else \
-            "mongodb+srv://vignesharivumani37:Vignesharivumani1230@cluster0.w7x5vdv.mongodb.net/dcm_system?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+        mongo_uri = (
+            settings.MONGODB_URL
+            if settings.MONGODB_URL
+            else "mongodb+srv://vignesharivumani37:Vignesharivumani1230@cluster0.w7x5vdv.mongodb.net/dcm_system?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+        )
         self.client = MongoClient(mongo_uri)
         self.db = self.client[settings.MONGODB_DATABASE]
         self.cases_collection = self.db.cases
@@ -135,7 +267,7 @@ class CaseIngestionService:
         text_lower = text.lower()
 
         # First check for explicit section mentions
-        section_pattern = r'section\s+(\d+[a-z]*)'
+        section_pattern = r"section\s+(\d+[a-z]*)"
         matches = re.findall(section_pattern, text_lower)
         if matches:
             return f"Section {matches[0].upper()}"
@@ -155,15 +287,33 @@ class CaseIngestionService:
 
         # Fast track indicators
         fast_keywords = [
-            "mutual consent", "uncontested", "simple", "routine", "minor",
-            "summary", "petty", "traffic", "bail", "interim"
+            "mutual consent",
+            "uncontested",
+            "simple",
+            "routine",
+            "minor",
+            "summary",
+            "petty",
+            "traffic",
+            "bail",
+            "interim",
         ]
 
         # Complex track indicators
         complex_keywords = [
-            "murder", "multiple accused", "conspiracy", "organized crime",
-            "appeal", "revision", "complex", "international", "corporate fraud",
-            "constitutional", "pil", "corruption", "multiple parties"
+            "murder",
+            "multiple accused",
+            "conspiracy",
+            "organized crime",
+            "appeal",
+            "revision",
+            "complex",
+            "international",
+            "corporate fraud",
+            "constitutional",
+            "pil",
+            "corruption",
+            "multiple parties",
         ]
 
         if any(kw in text_lower for kw in fast_keywords):
@@ -177,11 +327,7 @@ class CaseIngestionService:
         """
         Estimate hearing duration based on track
         """
-        durations = {
-            "FAST": 45,
-            "REGULAR": 90,
-            "COMPLEX": 180
-        }
+        durations = {"FAST": 45, "REGULAR": 90, "COMPLEX": 180}
         return durations.get(track, 90)
 
     def extract_keywords(self, text: str) -> List[str]:
@@ -210,22 +356,25 @@ class CaseIngestionService:
             "CIVIL": "CIV",
             "FAMILY": "FAM",
             "COMMERCIAL": "COM",
-            "CONSTITUTIONAL": "CON"
+            "CONSTITUTIONAL": "CON",
         }
 
         code = type_codes.get(case_type, "MIS")
 
         # Get count of cases of this type in current year
-        count = self.cases_collection.count_documents({
-            "case_type": case_type,
-            "filing_date": {"$regex": f"^{year}"}
-        })
+        count = self.cases_collection.count_documents(
+            {"case_type": case_type, "filing_date": {"$regex": f"^{year}"}}
+        )
 
         return f"{code}/{year}/{str(count + 1).zfill(4)}"
 
-    def ingest_case(self, title: str, description: str,
-                   filing_date: Optional[date] = None,
-                   additional_info: Optional[Dict] = None) -> Dict:
+    def ingest_case(
+        self,
+        title: str,
+        description: str,
+        filing_date: Optional[date] = None,
+        additional_info: Optional[Dict] = None,
+    ) -> Dict:
         """
         Main method to ingest a new case with automatic classification
 
@@ -266,7 +415,7 @@ class CaseIngestionService:
             "keywords": keywords,
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
-            "auto_classified": True  # Flag to indicate auto-classification
+            "auto_classified": True,  # Flag to indicate auto-classification
         }
 
         # Add BNS section if detected
@@ -290,9 +439,9 @@ class CaseIngestionService:
                 "priority": priority,
                 "track": track,
                 "bns_section": bns_section,
-                "estimated_duration": duration
+                "estimated_duration": duration,
             },
-            "case_details": case_doc
+            "case_details": case_doc,
         }
 
     def ingest_bulk_cases(self, cases: List[Dict]) -> Dict:
@@ -305,12 +454,7 @@ class CaseIngestionService:
         Returns:
             Summary of ingestion results
         """
-        results = {
-            "total": len(cases),
-            "success": 0,
-            "failed": 0,
-            "cases": []
-        }
+        results = {"total": len(cases), "success": 0, "failed": 0, "cases": []}
 
         for case_data in cases:
             try:
@@ -318,17 +462,19 @@ class CaseIngestionService:
                     title=case_data.get("title", ""),
                     description=case_data.get("description", ""),
                     filing_date=case_data.get("filing_date"),
-                    additional_info=case_data.get("additional_info")
+                    additional_info=case_data.get("additional_info"),
                 )
                 results["success"] += 1
                 results["cases"].append(result)
             except Exception as e:
                 results["failed"] += 1
-                results["cases"].append({
-                    "success": False,
-                    "error": str(e),
-                    "title": case_data.get("title", "Unknown")
-                })
+                results["cases"].append(
+                    {
+                        "success": False,
+                        "error": str(e),
+                        "title": case_data.get("title", "Unknown"),
+                    }
+                )
 
         return results
 
@@ -343,7 +489,7 @@ class CaseIngestionService:
         ]
         """
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 cases = json.load(f)
 
             if not isinstance(cases, list):
@@ -352,14 +498,11 @@ class CaseIngestionService:
             return self.ingest_bulk_cases(cases)
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e)
-            }
+            return {"success": False, "error": str(e)}
 
     def __del__(self):
         """Close MongoDB connection"""
-        if hasattr(self, 'client'):
+        if hasattr(self, "client"):
             self.client.close()
 
 

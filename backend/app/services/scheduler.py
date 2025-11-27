@@ -15,6 +15,7 @@ from app.models.user import User, UserRole
 
 class SchedulingResult:
     """Result of scheduling operation"""
+
     def __init__(self):
         self.scheduled_hearings: List[HearingCreate] = []
         self.unplaced_cases: List[Case] = []
@@ -31,9 +32,9 @@ class CaseScheduler:
 
         # Track prioritization weights
         self.track_weights = {
-            CaseTrack.FAST: 3,     # High priority
+            CaseTrack.FAST: 3,  # High priority
             CaseTrack.REGULAR: 2,  # Medium priority
-            CaseTrack.COMPLEX: 1   # Lower priority (longer cases)
+            CaseTrack.COMPLEX: 1,  # Lower priority (longer cases)
         }
 
     def calculate_case_priority_score(self, case: Case) -> float:
@@ -52,12 +53,7 @@ class CaseScheduler:
         score += min(days_old * 0.1, 10)  # Cap at 10 points for age
 
         # Priority level
-        priority_scores = {
-            "urgent": 20,
-            "high": 15,
-            "medium": 10,
-            "low": 5
-        }
+        priority_scores = {"urgent": 20, "high": 15, "medium": 10, "low": 5}
         score += priority_scores.get(case.priority.value, 10)
 
         # Penalty for estimated duration (longer cases get lower priority in greedy)
@@ -67,10 +63,7 @@ class CaseScheduler:
         return score
 
     def get_available_slots_for_date(
-        self,
-        target_date: date,
-        existing_hearings: List[Hearing],
-        benches: List[Bench]
+        self, target_date: date, existing_hearings: List[Hearing], benches: List[Bench]
     ) -> Dict[int, int]:
         """
         Get available slots per bench for a given date
@@ -83,12 +76,17 @@ class CaseScheduler:
 
         # Subtract already scheduled hearings
         for hearing in existing_hearings:
-            if hearing.hearing_date == target_date and hearing.bench_id in bench_capacity:
+            if (
+                hearing.hearing_date == target_date
+                and hearing.bench_id in bench_capacity
+            ):
                 bench_capacity[hearing.bench_id] -= hearing.estimated_duration_minutes
 
         # Apply slack (reserve some capacity)
         for bench_id in bench_capacity:
-            bench_capacity[bench_id] = int(bench_capacity[bench_id] * (1 - self.slack_percentage))
+            bench_capacity[bench_id] = int(
+                bench_capacity[bench_id] * (1 - self.slack_percentage)
+            )
             # Ensure non-negative
             bench_capacity[bench_id] = max(0, bench_capacity[bench_id])
 
@@ -99,7 +97,7 @@ class CaseScheduler:
         case: Case,
         target_date: date,
         available_slots: Dict[int, int],
-        judges: List[User]
+        judges: List[User],
     ) -> Optional[Tuple[int, int, time]]:
         """
         Find the best bench, judge, and time slot for a case
@@ -124,7 +122,8 @@ class CaseScheduler:
 
         # Get available judges (only judges and admins can preside)
         available_judges = [
-            judge for judge in judges
+            judge
+            for judge in judges
             if judge.role in [UserRole.JUDGE, UserRole.ADMIN] and judge.is_active
         ]
 
@@ -148,7 +147,7 @@ class CaseScheduler:
         num_days: int,
         benches: List[Bench],
         judges: List[User],
-        existing_hearings: List[Hearing]
+        existing_hearings: List[Hearing],
     ) -> SchedulingResult:
         """
         Schedule cases using greedy allocation algorithm
@@ -168,7 +167,9 @@ class CaseScheduler:
 
         # Filter cases that need scheduling (not already scheduled)
         scheduled_case_ids = {h.case_id for h in existing_hearings}
-        unscheduled_cases = [case for case in cases if case.id not in scheduled_case_ids]
+        unscheduled_cases = [
+            case for case in cases if case.id not in scheduled_case_ids
+        ]
 
         # Sort cases by priority score (highest first)
         case_priority_heap = []
@@ -183,7 +184,7 @@ class CaseScheduler:
             "scheduled_count": 0,
             "unplaced_count": 0,
             "total_duration_scheduled": 0,
-            "scheduling_dates": []
+            "scheduling_dates": [],
         }
 
         # Schedule over the specified date range
@@ -191,7 +192,9 @@ class CaseScheduler:
             current_date = start_date + timedelta(days=day_offset)
 
             # Get available slots for this date
-            date_hearings = [h for h in existing_hearings if h.hearing_date == current_date]
+            date_hearings = [
+                h for h in existing_hearings if h.hearing_date == current_date
+            ]
             available_slots = self.get_available_slots_for_date(
                 current_date, date_hearings, benches
             )
@@ -221,7 +224,7 @@ class CaseScheduler:
                         start_time=start_time,
                         estimated_duration_minutes=case.estimated_duration_minutes,
                         status=HearingStatus.SCHEDULED,
-                        notes=f"Auto-scheduled via DCM system (priority: {-neg_priority:.2f})"
+                        notes=f"Auto-scheduled via DCM system (priority: {-neg_priority:.2f})",
                     )
 
                     result.scheduled_hearings.append(hearing)
@@ -244,12 +247,14 @@ class CaseScheduler:
                 heapq.heappush(case_priority_heap, item)
 
             # Record daily stats
-            stats["scheduling_dates"].append({
-                "date": current_date.isoformat(),
-                "scheduled_count": daily_scheduled,
-                "total_duration": daily_duration,
-                "available_slots_remaining": sum(available_slots.values())
-            })
+            stats["scheduling_dates"].append(
+                {
+                    "date": current_date.isoformat(),
+                    "scheduled_count": daily_scheduled,
+                    "total_duration": daily_duration,
+                    "available_slots_remaining": sum(available_slots.values()),
+                }
+            )
 
         # Remaining cases are unplaced
         while case_priority_heap:
@@ -260,11 +265,13 @@ class CaseScheduler:
         # Calculate final statistics
         stats["placement_rate"] = (
             (stats["scheduled_count"] / stats["total_cases"]) * 100
-            if stats["total_cases"] > 0 else 0
+            if stats["total_cases"] > 0
+            else 0
         )
         stats["average_duration_per_case"] = (
             stats["total_duration_scheduled"] / stats["scheduled_count"]
-            if stats["scheduled_count"] > 0 else 0
+            if stats["scheduled_count"] > 0
+            else 0
         )
 
         result.scheduling_stats = stats
@@ -272,9 +279,7 @@ class CaseScheduler:
         return result
 
     def get_scheduling_conflicts(
-        self,
-        hearings: List[Hearing],
-        target_date: date
+        self, hearings: List[Hearing], target_date: date
     ) -> List[Dict[str, Any]]:
         """
         Detect scheduling conflicts for a given date
@@ -295,16 +300,18 @@ class CaseScheduler:
         # Check for time overlaps within each bench
         for bench_id, bench_hearings in bench_schedules.items():
             for i, hearing1 in enumerate(bench_hearings):
-                for hearing2 in bench_hearings[i+1:]:
+                for hearing2 in bench_hearings[i + 1 :]:
                     # Simple overlap check (would need more sophisticated logic for real times)
                     if self._hearings_overlap(hearing1, hearing2):
-                        conflicts.append({
-                            "type": "time_overlap",
-                            "bench_id": bench_id,
-                            "hearing1_id": hearing1.id,
-                            "hearing2_id": hearing2.id,
-                            "description": f"Hearings {hearing1.id} and {hearing2.id} overlap on bench {bench_id}"
-                        })
+                        conflicts.append(
+                            {
+                                "type": "time_overlap",
+                                "bench_id": bench_id,
+                                "hearing1_id": hearing1.id,
+                                "hearing2_id": hearing2.id,
+                                "description": f"Hearings {hearing1.id} and {hearing2.id} overlap on bench {bench_id}",
+                            }
+                        )
 
         return conflicts
 
@@ -314,8 +321,10 @@ class CaseScheduler:
         Simplified version - in reality would need proper time calculations
         """
         # For now, just check if they're on the same day and bench
-        return (hearing1.hearing_date == hearing2.hearing_date and
-                hearing1.bench_id == hearing2.bench_id)
+        return (
+            hearing1.hearing_date == hearing2.hearing_date
+            and hearing1.bench_id == hearing2.bench_id
+        )
 
 
 # Global instance

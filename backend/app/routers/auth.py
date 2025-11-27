@@ -9,7 +9,12 @@ from sqlmodel import Session, select
 
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.security import create_access_token, get_current_user, get_password_hash, verify_password
+from app.core.security import (
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    verify_password,
+)
 from app.models.audit_log import AuditAction
 from app.models.user import User, UserCreate, UserPublic
 from app.services.audit import audit_service
@@ -21,7 +26,7 @@ router = APIRouter()
 async def login(
     request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     OAuth2 compatible token login, get an access token for future requests
@@ -38,7 +43,7 @@ async def login(
             resource_type="user",
             description=f"Failed login attempt for username: {form_data.username}",
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent")
+            user_agent=request.headers.get("user-agent"),
         )
 
         raise HTTPException(
@@ -49,15 +54,13 @@ async def login(
 
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
         )
 
     # Create access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=access_token_expires
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
     # Log successful login
@@ -65,14 +68,14 @@ async def login(
         session=session,
         user=user,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        "user": UserPublic.from_orm(user)
+        "user": UserPublic.from_orm(user),
     }
 
 
@@ -80,7 +83,7 @@ async def login(
 async def logout(
     request: Request,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Logout endpoint (mainly for audit logging)
@@ -90,7 +93,7 @@ async def logout(
         session=session,
         user=current_user,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     return {"message": "Successfully logged out"}
@@ -106,9 +109,7 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 
 @router.post("/register", response_model=UserPublic)
 async def register_user(
-    user_data: UserCreate,
-    request: Request,
-    session: Session = Depends(get_session)
+    user_data: UserCreate, request: Request, session: Session = Depends(get_session)
 ):
     """
     Register a new user (for development/testing)
@@ -121,7 +122,7 @@ async def register_user(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
+            detail="Username already registered",
         )
 
     # Check if email already exists
@@ -130,8 +131,7 @@ async def register_user(
 
     if existing_email:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
     # Create new user
@@ -143,7 +143,7 @@ async def register_user(
         full_name=user_data.full_name,
         role=user_data.role,
         is_active=user_data.is_active,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
     )
 
     session.add(db_user)
@@ -161,11 +161,11 @@ async def register_user(
             "email": db_user.email,
             "full_name": db_user.full_name,
             "role": db_user.role.value,
-            "is_active": db_user.is_active
+            "is_active": db_user.is_active,
         },
         description=f"New user registered: {db_user.username}",
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     return db_user
@@ -180,5 +180,5 @@ async def test_token(current_user: User = Depends(get_current_user)):
         "message": "Token is valid",
         "user_id": current_user.id,
         "username": current_user.username,
-        "role": current_user.role
+        "role": current_user.role,
     }

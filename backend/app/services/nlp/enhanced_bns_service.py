@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional
 # Import the model trainer
 try:
     from .bns_model_trainer import BNSModelTrainer
+
     ML_AVAILABLE = True
 except ImportError:
     ML_AVAILABLE = False
@@ -68,33 +69,30 @@ class EnhancedBNSService:
             return False
 
     def suggest_bns_sections(
-        self,
-        case_synopsis: str,
-        max_suggestions: int = 5,
-        min_confidence: float = 0.1
+        self, case_synopsis: str, max_suggestions: int = 5, min_confidence: float = 0.1
     ) -> List[Dict[str, Any]]:
         """
         Suggest BNS sections using ML or rule-based approach
         """
         if self.use_ml and self.ml_trainer:
-            return self._ml_predict_sections(case_synopsis, max_suggestions, min_confidence)
+            return self._ml_predict_sections(
+                case_synopsis, max_suggestions, min_confidence
+            )
         else:
             return self._rule_based_predict_sections(case_synopsis, max_suggestions)
 
     def _ml_predict_sections(
-        self,
-        case_synopsis: str,
-        max_suggestions: int,
-        min_confidence: float
+        self, case_synopsis: str, max_suggestions: int, min_confidence: float
     ) -> List[Dict[str, Any]]:
         """Use ML model for prediction"""
         try:
-            predictions = self.ml_trainer.predict_section(case_synopsis, top_k=max_suggestions)
+            predictions = self.ml_trainer.predict_section(
+                case_synopsis, top_k=max_suggestions
+            )
 
             # Filter by minimum confidence
             filtered_predictions = [
-                pred for pred in predictions
-                if pred["confidence"] >= min_confidence
+                pred for pred in predictions if pred["confidence"] >= min_confidence
             ]
 
             # Format for API response
@@ -103,10 +101,14 @@ class EnhancedBNSService:
                 suggestion = {
                     "section_number": pred["section_number"],
                     "section_title": pred["title"],
-                    "description": pred["description"][:200] + "..." if len(pred["description"]) > 200 else pred["description"],
+                    "description": pred["description"][:200] + "..."
+                    if len(pred["description"]) > 200
+                    else pred["description"],
                     "confidence": round(pred["confidence"], 3),
                     "method": "ml_model",
-                    "keywords_matched": self._extract_keywords(case_synopsis, pred["section_number"])
+                    "keywords_matched": self._extract_keywords(
+                        case_synopsis, pred["section_number"]
+                    ),
                 }
                 suggestions.append(suggestion)
 
@@ -117,9 +119,7 @@ class EnhancedBNSService:
             return self._rule_based_predict_sections(case_synopsis, max_suggestions)
 
     def _rule_based_predict_sections(
-        self,
-        case_synopsis: str,
-        max_suggestions: int
+        self, case_synopsis: str, max_suggestions: int
     ) -> List[Dict[str, Any]]:
         """Fallback rule-based prediction"""
         synopsis_lower = case_synopsis.lower()
@@ -138,7 +138,9 @@ class EnhancedBNSService:
                 # Calculate word overlap
                 overlap = len(example_words.intersection(synopsis_words))
                 if overlap > 2:  # At least 3 word overlap
-                    matched_keywords.extend(list(example_words.intersection(synopsis_words)))
+                    matched_keywords.extend(
+                        list(example_words.intersection(synopsis_words))
+                    )
                     total_score += overlap
 
             # Direct keyword matching from title and description
@@ -158,10 +160,14 @@ class EnhancedBNSService:
                 suggestion = {
                     "section_number": section_num,
                     "section_title": section_data["title"],
-                    "description": section_data["description"][:200] + "..." if len(section_data["description"]) > 200 else section_data["description"],
+                    "description": section_data["description"][:200] + "..."
+                    if len(section_data["description"]) > 200
+                    else section_data["description"],
                     "confidence": round(confidence, 3),
                     "method": "rule_based",
-                    "keywords_matched": list(set(matched_keywords))[:5]  # Top 5 keywords
+                    "keywords_matched": list(set(matched_keywords))[
+                        :5
+                    ],  # Top 5 keywords
                 }
                 suggestions.append(suggestion)
 
@@ -196,13 +202,11 @@ class EnhancedBNSService:
             "title": section_data["title"],
             "description": section_data["description"],
             "examples": section_data["examples"][:3],  # First 3 examples
-            "total_examples": len(section_data["examples"])
+            "total_examples": len(section_data["examples"]),
         }
 
     def search_sections(
-        self,
-        query: str,
-        max_results: int = 10
+        self, query: str, max_results: int = 10
     ) -> List[Dict[str, Any]]:
         """Search BNS sections by query"""
         query_lower = query.lower()
@@ -229,8 +233,10 @@ class EnhancedBNSService:
                 result = {
                     "section_number": section_num,
                     "title": section_data["title"],
-                    "description": section_data["description"][:150] + "..." if len(section_data["description"]) > 150 else section_data["description"],
-                    "relevance_score": relevance_score
+                    "description": section_data["description"][:150] + "..."
+                    if len(section_data["description"]) > 150
+                    else section_data["description"],
+                    "relevance_score": relevance_score,
                 }
                 results.append(result)
 
@@ -245,15 +251,17 @@ class EnhancedBNSService:
             "ml_model_available": self.use_ml,
             "sections_covered": list(self.sections_db.keys()),
             "method": "ml_model" if self.use_ml else "rule_based",
-            "version": "2.0.0"
+            "version": "2.0.0",
         }
 
         if self.use_ml and self.ml_trainer:
             ml_info = self.ml_trainer.get_model_info()
-            stats.update({
-                "model_info": ml_info,
-                "feature_count": ml_info.get("feature_count", "Unknown")
-            })
+            stats.update(
+                {
+                    "model_info": ml_info,
+                    "feature_count": ml_info.get("feature_count", "Unknown"),
+                }
+            )
 
         return stats
 
@@ -286,7 +294,7 @@ if __name__ == "__main__":
         "The accused murdered the victim by stabbing with a knife",
         "Theft of mobile phone from crowded market",
         "Online fraud involving fake investment scheme",
-        "Domestic violence and harassment for dowry"
+        "Domestic violence and harassment for dowry",
     ]
 
     print("\n🧪 Testing BNS Service:")
@@ -295,8 +303,12 @@ if __name__ == "__main__":
         suggestions = service.suggest_bns_sections(case, max_suggestions=2)
 
         for j, suggestion in enumerate(suggestions, 1):
-            print(f"   {j}. Section {suggestion['section_number']}: {suggestion['section_title']}")
-            print(f"      Confidence: {suggestion['confidence']:.3f} | Method: {suggestion['method']}")
+            print(
+                f"   {j}. Section {suggestion['section_number']}: {suggestion['section_title']}"
+            )
+            print(
+                f"      Confidence: {suggestion['confidence']:.3f} | Method: {suggestion['method']}"
+            )
 
     # Print statistics
     print(f"\n📊 Service Statistics:")

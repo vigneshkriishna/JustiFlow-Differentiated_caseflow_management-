@@ -11,7 +11,15 @@ from sqlmodel import Session, select
 
 from app.core.database import get_session
 from app.core.security import get_current_user, require_clerk, require_judge
-from app.models.case import Case, CaseCreate, CaseOverride, CasePublic, CaseStatus, CaseTrack, CaseUpdate
+from app.models.case import (
+    Case,
+    CaseCreate,
+    CaseOverride,
+    CasePublic,
+    CaseStatus,
+    CaseTrack,
+    CaseUpdate,
+)
 from app.models.user import User
 from app.services.audit import audit_service
 from app.services.case_ingestion_service import CaseIngestionService
@@ -26,7 +34,7 @@ async def create_case(
     case_data: CaseCreate,
     request: Request,
     current_user: User = Depends(require_clerk),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Create a new case (Clerk access required)
@@ -38,7 +46,7 @@ async def create_case(
     if existing_case:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Case number {case_data.case_number} already exists"
+            detail=f"Case number {case_data.case_number} already exists",
         )
 
     # Create new case
@@ -54,7 +62,7 @@ async def create_case(
         case_data=case_data.dict(),
         case_id=db_case.id,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     # Send email notification for case filing
@@ -62,9 +70,11 @@ async def create_case(
         case_notification_data = {
             "case_number": db_case.case_number,
             "case_title": db_case.title,
-            "case_type": db_case.case_type.value if db_case.case_type else "Not specified",
+            "case_type": db_case.case_type.value
+            if db_case.case_type
+            else "Not specified",
             "filing_date": db_case.filing_date.strftime("%B %d, %Y"),
-            "status": db_case.status.value if db_case.status else "Filed"
+            "status": db_case.status.value if db_case.status else "Filed",
         }
 
         # Send to case clerk (case creator)
@@ -72,7 +82,7 @@ async def create_case(
             to_email=current_user.email,
             user_name=current_user.full_name,
             notification_type="case_filed",
-            case_data=case_notification_data
+            case_data=case_notification_data,
         )
 
         # TODO: Send to other stakeholders (e.g., if there's a plaintiff email)
@@ -92,7 +102,7 @@ async def list_cases(
     track: Optional[CaseTrack] = None,
     assigned_clerk_id: Optional[int] = None,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     List cases with optional filtering
@@ -123,7 +133,7 @@ async def list_cases(
 async def get_case(
     case_id: int,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Get a specific case by ID
@@ -133,16 +143,13 @@ async def get_case(
 
     if not case:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
 
     # Check access permissions
-    if (current_user.role == "clerk" and
-        case.assigned_clerk_id != current_user.id):
+    if current_user.role == "clerk" and case.assigned_clerk_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied to this case"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this case"
         )
 
     return case
@@ -154,7 +161,7 @@ async def update_case(
     case_update: CaseUpdate,
     request: Request,
     current_user: User = Depends(require_clerk),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Update a case (Clerk access required)
@@ -164,16 +171,13 @@ async def update_case(
 
     if not case:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
 
     # Check access permissions
-    if (current_user.role == "clerk" and
-        case.assigned_clerk_id != current_user.id):
+    if current_user.role == "clerk" and case.assigned_clerk_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied to this case"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this case"
         )
 
     # Store original data for audit
@@ -184,7 +188,7 @@ async def update_case(
         "priority": case.priority.value,
         "estimated_duration_minutes": case.estimated_duration_minutes,
         "assigned_clerk_id": case.assigned_clerk_id,
-        "assigned_bench_id": case.assigned_bench_id
+        "assigned_bench_id": case.assigned_bench_id,
     }
 
     # Store original status for email notification
@@ -209,7 +213,7 @@ async def update_case(
         "priority": case.priority.value,
         "estimated_duration_minutes": case.estimated_duration_minutes,
         "assigned_clerk_id": case.assigned_clerk_id,
-        "assigned_bench_id": case.assigned_bench_id
+        "assigned_bench_id": case.assigned_bench_id,
     }
 
     # Log case update
@@ -220,7 +224,7 @@ async def update_case(
         before_data=before_data,
         after_data=after_data,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     # Send email notification if status changed
@@ -234,7 +238,7 @@ async def update_case(
                 case_number=case.case_number,
                 previous_status=original_status,
                 new_status=new_status,
-                notes=f"Updated by {current_user.full_name}"
+                notes=f"Updated by {current_user.full_name}",
             )
 
             # TODO: Send to other stakeholders
@@ -251,7 +255,7 @@ async def classify_case(
     case_id: int,
     request: Request,
     current_user: User = Depends(require_clerk),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Classify a case using DCM rules engine
@@ -261,8 +265,7 @@ async def classify_case(
 
     if not case:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
 
     # Run classification
@@ -285,13 +288,13 @@ async def classify_case(
         case_id=case.id,
         classification_result=classification.dict(),
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     return {
         "case_id": case.id,
         "classification": classification.dict(),
-        "message": f"Case classified as {classification.track.value} track"
+        "message": f"Case classified as {classification.track.value} track",
     }
 
 
@@ -301,7 +304,7 @@ async def override_case_track(
     override_data: CaseOverride,
     request: Request,
     current_user: User = Depends(require_judge),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Override case track classification (Judge access required)
@@ -311,8 +314,7 @@ async def override_case_track(
 
     if not case:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
 
     # Store original track for audit
@@ -339,7 +341,7 @@ async def override_case_track(
         new_track=override_data.new_track.value,
         reason=override_data.reason,
         ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent")
+        user_agent=request.headers.get("user-agent"),
     )
 
     return {
@@ -349,7 +351,7 @@ async def override_case_track(
         "reason": override_data.reason,
         "overridden_by": current_user.full_name,
         "overridden_at": case.override_at,
-        "message": "Case track successfully overridden"
+        "message": "Case track successfully overridden",
     }
 
 
@@ -357,7 +359,7 @@ async def override_case_track(
 async def get_case_audit_trail(
     case_id: int,
     current_user: User = Depends(get_current_user),
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
 ):
     """
     Get audit trail for a specific case
@@ -368,29 +370,23 @@ async def get_case_audit_trail(
 
     if not case:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Case not found"
         )
 
     # Check access permissions
-    if (current_user.role == "clerk" and
-        case.assigned_clerk_id != current_user.id):
+    if current_user.role == "clerk" and case.assigned_clerk_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied to this case"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied to this case"
         )
 
     # Get audit trail
     audit_trail = audit_service.get_audit_trail(
-        session=session,
-        case_id=case_id,
-        limit=50
+        session=session, case_id=case_id, limit=50
     )
 
     # Get summary
     audit_summary = audit_service.get_case_audit_summary(
-        session=session,
-        case_id=case_id
+        session=session, case_id=case_id
     )
 
     return {
@@ -405,10 +401,10 @@ async def get_case_audit_trail(
                 "description": log.description,
                 "created_at": log.created_at,
                 "before_data": log.before_data,
-                "after_data": log.after_data
+                "after_data": log.after_data,
             }
             for log in audit_trail
-        ]
+        ],
     }
 
 
@@ -416,8 +412,10 @@ async def get_case_audit_trail(
 # INTELLIGENT AUTO-INGESTION ENDPOINTS
 # ============================================================================
 
+
 class AutoIngestRequest(BaseModel):
     """Request model for auto-ingestion"""
+
     title: str
     description: str
     filing_date: Optional[str] = None
@@ -425,13 +423,13 @@ class AutoIngestRequest(BaseModel):
 
 class BulkAutoIngestRequest(BaseModel):
     """Request model for bulk auto-ingestion"""
+
     cases: List[AutoIngestRequest]
 
 
 @router.post("/auto-ingest", status_code=status.HTTP_201_CREATED)
 async def auto_ingest_case(
-    ingest_data: AutoIngestRequest,
-    current_user: User = Depends(require_clerk)
+    ingest_data: AutoIngestRequest, current_user: User = Depends(require_clerk)
 ):
     """
     🎯 Intelligent Auto-Ingestion: Automatically detects case type, priority, track, and BNS section
@@ -455,7 +453,7 @@ async def auto_ingest_case(
         result = ingestion_service.ingest_case(
             title=ingest_data.title,
             description=ingest_data.description,
-            filing_date=ingest_data.filing_date
+            filing_date=ingest_data.filing_date,
         )
 
         if result.get("success"):
@@ -470,26 +468,27 @@ async def auto_ingest_case(
                     "priority": result["classification"]["priority"],
                     "track": result["classification"]["track"],
                     "bns_section": result["classification"]["bns_section"],
-                    "estimated_duration": result["classification"]["estimated_duration"]
-                }
+                    "estimated_duration": result["classification"][
+                        "estimated_duration"
+                    ],
+                },
             }
         else:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to ingest case"
+                detail="Failed to ingest case",
             )
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Auto-ingestion failed: {str(e)}"
+            detail=f"Auto-ingestion failed: {str(e)}",
         )
 
 
 @router.post("/auto-ingest/bulk", status_code=status.HTTP_201_CREATED)
 async def auto_ingest_bulk_cases(
-    bulk_data: BulkAutoIngestRequest,
-    current_user: User = Depends(require_clerk)
+    bulk_data: BulkAutoIngestRequest, current_user: User = Depends(require_clerk)
 ):
     """
     🎯 Bulk Auto-Ingestion: Process multiple cases at once
@@ -504,7 +503,7 @@ async def auto_ingest_bulk_cases(
             {
                 "title": case.title,
                 "description": case.description,
-                "filing_date": case.filing_date
+                "filing_date": case.filing_date,
             }
             for case in bulk_data.cases
         ]
@@ -517,29 +516,28 @@ async def auto_ingest_bulk_cases(
             "summary": {
                 "total": results["total"],
                 "success": results["success"],
-                "failed": results["failed"]
+                "failed": results["failed"],
             },
             "cases": [
                 {
                     "case_number": case.get("case_number"),
-                    "classification": case.get("classification")
+                    "classification": case.get("classification"),
                 }
                 for case in results["cases"]
                 if case.get("success")
-            ]
+            ],
         }
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Bulk ingestion failed: {str(e)}"
+            detail=f"Bulk ingestion failed: {str(e)}",
         )
 
 
 @router.post("/auto-ingest/preview")
 async def preview_auto_classification(
-    ingest_data: AutoIngestRequest,
-    current_user: User = Depends(get_current_user)
+    ingest_data: AutoIngestRequest, current_user: User = Depends(get_current_user)
 ):
     """
     🔍 Preview Classification: See how case would be classified WITHOUT saving
@@ -567,14 +565,13 @@ async def preview_auto_classification(
                 "track": track,
                 "bns_section": bns_section,
                 "estimated_duration_minutes": duration,
-                "keywords": keywords
+                "keywords": keywords,
             },
-            "message": "This is a preview. Case has NOT been saved."
+            "message": "This is a preview. Case has NOT been saved.",
         }
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Preview failed: {str(e)}"
+            detail=f"Preview failed: {str(e)}",
         )
-

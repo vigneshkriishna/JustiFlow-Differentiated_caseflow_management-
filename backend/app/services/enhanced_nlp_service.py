@@ -61,7 +61,7 @@ class BNSClassificationService:
             "103(1)": "Murder",
             "370": "Trafficking of persons",
             "364A": "Kidnapping for ransom",
-            "199": "False statement in declaration"
+            "199": "False statement in declaration",
         }
         self.punishment_mapping = {
             "303(2)": {"punishment": "3 years imprisonment", "severity": "medium"},
@@ -73,7 +73,7 @@ class BNSClassificationService:
             "354": {"punishment": "2 years imprisonment", "severity": "medium"},
             "103(1)": {"punishment": "life imprisonment", "severity": "extreme"},
             "370": {"punishment": "7 years imprisonment", "severity": "high"},
-            "364A": {"punishment": "life imprisonment", "severity": "extreme"}
+            "364A": {"punishment": "life imprisonment", "severity": "extreme"},
         }
         self._load_model()
 
@@ -85,12 +85,14 @@ class BNSClassificationService:
             info_path = current_dir.parent.parent.parent / "models" / "model_info.json"
 
             if info_path.exists():
-                with open(info_path, 'r') as f:
+                with open(info_path, "r") as f:
                     self.model_info = json.load(f)
 
                 self.is_loaded = True
                 print(f"✅ BNS Model info loaded successfully")
-                print(f"📊 Accuracy: {self.model_info.get('accuracy_metrics', {}).get('test_accuracy', 'N/A')}")
+                print(
+                    f"📊 Accuracy: {self.model_info.get('accuracy_metrics', {}).get('test_accuracy', 'N/A')}"
+                )
 
             else:
                 print(f"⚠️  Model info not found at {info_path}")
@@ -102,16 +104,23 @@ class BNSClassificationService:
 
     def _rule_based_classification(self, case_data: Dict) -> Dict:
         """Rule-based classification for high-confidence cases"""
-        description = case_data.get('description', '').lower()
-        case_type = case_data.get('case_type', '').lower()
-        title = case_data.get('title', '').lower()
+        description = case_data.get("description", "").lower()
+        case_type = case_data.get("case_type", "").lower()
+        title = case_data.get("title", "").lower()
 
         combined_text = f"{description} {case_type} {title}"
 
         # Rule patterns for common crimes
         rules = {
             "303(2)": ["theft", "stolen", "snatched", "rob", "steal", "mobile phone"],
-            "318(4)": ["fraud", "cheating", "fake", "impersonation", "deceive", "fake website"],
+            "318(4)": [
+                "fraud",
+                "cheating",
+                "fake",
+                "impersonation",
+                "deceive",
+                "fake website",
+            ],
             "326": ["assault", "hurt", "weapon", "attack", "violence", "iron rod"],
             "331": ["house-breaking", "burglary", "break", "enter", "broke into"],
             "336": ["forgery", "fake document", "forged", "false certificate"],
@@ -119,7 +128,7 @@ class BNSClassificationService:
             "354": ["molestation", "inappropriate touch", "sexual harassment"],
             "103(1)": ["murder", "killed", "homicide", "death"],
             "370": ["trafficking", "human trafficking", "forced labor"],
-            "364A": ["kidnapping", "ransom", "abduction"]
+            "364A": ["kidnapping", "ransom", "abduction"],
         }
 
         best_match = None
@@ -146,7 +155,7 @@ class BNSClassificationService:
                 "bns_section": best_match,
                 "confidence": confidence,
                 "rule_based_match": True,
-                "reasoning": [f"Rule-based match: {', '.join(matched_patterns[:3])}"]
+                "reasoning": [f"Rule-based match: {', '.join(matched_patterns[:3])}"],
             }
         elif best_match and max_matches == 1:
             confidence = 0.75
@@ -154,7 +163,7 @@ class BNSClassificationService:
                 "bns_section": best_match,
                 "confidence": confidence,
                 "rule_based_match": True,
-                "reasoning": [f"Pattern match: {matched_patterns[0]}"]
+                "reasoning": [f"Pattern match: {matched_patterns[0]}"],
             }
 
         return None
@@ -179,13 +188,15 @@ class BNSClassificationService:
                 return {
                     "bns_section": bns_section,
                     "confidence": result["confidence"],
-                    "punishment": punishment_info.get("punishment", "Punishment as per law"),
+                    "punishment": punishment_info.get(
+                        "punishment", "Punishment as per law"
+                    ),
                     "severity": punishment_info.get("severity", "medium"),
                     "rule_based_match": True,
                     "reasoning": result["reasoning"],
                     "ensemble_scores": {"rule_based": result["confidence"]},
                     "status": "success",
-                    "model_mode": "fallback"
+                    "model_mode": "fallback",
                 }
             else:
                 # Default fallback
@@ -198,7 +209,7 @@ class BNSClassificationService:
                     "reasoning": ["Fallback classification based on case type"],
                     "ensemble_scores": {"fallback": 0.60},
                     "status": "success",
-                    "model_mode": "fallback"
+                    "model_mode": "fallback",
                 }
 
         try:
@@ -214,57 +225,64 @@ class BNSClassificationService:
                 reasoning = rule_result["reasoning"]
             else:
                 # Simulate ML prediction based on case characteristics
-                case_type = case_data.get('case_type', '').lower()
-                severity = case_data.get('severity', 'medium').lower()
+                case_type = case_data.get("case_type", "").lower()
+                severity = case_data.get("severity", "medium").lower()
 
                 # Mapping based on case type
                 type_mapping = {
-                    'theft': ("303(2)", 0.78),
-                    'fraud': ("318(4)", 0.82),
-                    'assault': ("326", 0.75),
-                    'burglary': ("331", 0.73),
-                    'robbery': ("309(4)", 0.85),
-                    'molestation': ("354", 0.77),
-                    'murder': ("103(1)", 0.90),
-                    'trafficking': ("370", 0.88)
+                    "theft": ("303(2)", 0.78),
+                    "fraud": ("318(4)", 0.82),
+                    "assault": ("326", 0.75),
+                    "burglary": ("331", 0.73),
+                    "robbery": ("309(4)", 0.85),
+                    "molestation": ("354", 0.77),
+                    "murder": ("103(1)", 0.90),
+                    "trafficking": ("370", 0.88),
                 }
 
-                bns_section, base_confidence = type_mapping.get(case_type, ("318(1)", 0.65))
+                bns_section, base_confidence = type_mapping.get(
+                    case_type, ("318(1)", 0.65)
+                )
 
                 # Adjust confidence based on severity
-                if severity == 'high':
+                if severity == "high":
                     confidence = min(0.95, base_confidence + 0.05)
-                elif severity == 'low':
+                elif severity == "low":
                     confidence = max(0.60, base_confidence - 0.05)
                 else:
                     confidence = base_confidence
 
                 rule_based = False
-                reasoning = [f"Case type: {case_type}", f"Severity: {severity}", "ML ensemble prediction"]
+                reasoning = [
+                    f"Case type: {case_type}",
+                    f"Severity: {severity}",
+                    "ML ensemble prediction",
+                ]
 
             punishment_info = self.punishment_mapping.get(bns_section, {})
 
             return {
                 "bns_section": bns_section,
                 "confidence": round(confidence, 4),
-                "punishment": punishment_info.get("punishment", "Punishment as per law"),
-                "severity": punishment_info.get("severity", case_data.get('severity', 'medium')),
+                "punishment": punishment_info.get(
+                    "punishment", "Punishment as per law"
+                ),
+                "severity": punishment_info.get(
+                    "severity", case_data.get("severity", "medium")
+                ),
                 "rule_based_match": rule_based,
                 "reasoning": reasoning,
                 "ensemble_scores": {
                     "ensemble" if not rule_based else "rule_based": confidence,
                     "logistic": confidence * 0.9 if not rule_based else 0,
-                    "random_forest": confidence * 1.1 if not rule_based else 0
+                    "random_forest": confidence * 1.1 if not rule_based else 0,
                 },
                 "status": "success",
-                "model_mode": "production"
+                "model_mode": "production",
             }
 
         except Exception as e:
-            return {
-                "error": str(e),
-                "status": "error"
-            }
+            return {"error": str(e), "status": "error"}
 
     def load_enhanced_model(self) -> Dict:
         """Load the enhanced ensemble BNS classification model"""
@@ -277,33 +295,33 @@ class BNSClassificationService:
                 return {
                     "success": False,
                     "message": f"Enhanced model not found at {self.model_path}",
-                    "fallback_mode": True
+                    "fallback_mode": True,
                 }
 
             if not os.path.exists(self.model_info_path):
                 return {
                     "success": False,
                     "message": f"Model info not found at {self.model_info_path}",
-                    "fallback_mode": True
+                    "fallback_mode": True,
                 }
 
             # Load model
             try:
-                with open(self.model_path, 'rb') as f:
+                with open(self.model_path, "rb") as f:
                     model_data = pickle.load(f)
-                    self.model = model_data['model']
-                    self.vectorizer = model_data['vectorizer']
+                    self.model = model_data["model"]
+                    self.vectorizer = model_data["vectorizer"]
             except Exception as e:
                 print(f"❌ Failed to load enhanced model: {e}")
                 self.is_enhanced_model_available = False
                 return {
                     "success": False,
                     "message": f"Failed to load model: {e}",
-                    "fallback_mode": True
+                    "fallback_mode": True,
                 }
 
             # Load model info
-            with open(self.model_info_path, 'r') as f:
+            with open(self.model_info_path, "r") as f:
                 self.model_info = json.load(f)
 
             self.is_loaded = True
@@ -313,7 +331,7 @@ class BNSClassificationService:
             return {
                 "success": True,
                 "message": "Enhanced model loaded successfully",
-                "model_info": self.model_info
+                "model_info": self.model_info,
             }
 
         except Exception as e:
@@ -321,7 +339,7 @@ class BNSClassificationService:
             return {
                 "success": False,
                 "message": f"Failed to load enhanced model: {str(e)}",
-                "error": str(e)
+                "error": str(e),
             }
 
     def get_model_status(self) -> Dict:
@@ -330,17 +348,23 @@ class BNSClassificationService:
             return {
                 "status": "fallback_mode",
                 "model_available": False,
-                "message": "Using rule-based classification"
+                "message": "Using rule-based classification",
             }
 
         return {
             "status": "loaded",
             "model_available": True,
             "model_info": self.model_info,
-            "supported_sections": len(self.model_info.get('bns_sections_supported', [])),
-            "accuracy": self.model_info.get('accuracy_metrics', {}),
-            "training_date": self.model_info.get('training_metadata', {}).get('training_date'),
-            "dataset_size": self.model_info.get('training_metadata', {}).get('dataset_size')
+            "supported_sections": len(
+                self.model_info.get("bns_sections_supported", [])
+            ),
+            "accuracy": self.model_info.get("accuracy_metrics", {}),
+            "training_date": self.model_info.get("training_metadata", {}).get(
+                "training_date"
+            ),
+            "dataset_size": self.model_info.get("training_metadata", {}).get(
+                "dataset_size"
+            ),
         }
 
     def batch_classify(self, cases: List[Dict]) -> List[Dict]:
@@ -349,10 +373,11 @@ class BNSClassificationService:
 
         for case in cases:
             result = self.classify_case(case)
-            result['case_id'] = case.get('case_id', 'unknown')
+            result["case_id"] = case.get("case_id", "unknown")
             results.append(result)
 
         return results
+
 
 # Global service instance
 bns_classification_service = BNSClassificationService()
