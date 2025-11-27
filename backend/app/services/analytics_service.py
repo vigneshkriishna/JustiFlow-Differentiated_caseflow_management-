@@ -6,8 +6,8 @@ Provides comprehensive analytics and reporting functionality
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
-from sqlmodel import Session, select
 from beanie import PydanticObjectId
+from sqlmodel import Session, select
 
 from app.models.audit_log import AuditLog
 from app.models.case import Case, CasePriority, CaseStatus, CaseType

@@ -3,10 +3,10 @@ User management API endpoints
 """
 from typing import List, Optional, Union
 
+from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlmodel import Session, select
-from beanie import PydanticObjectId
 
 from app.core.database import get_session
 from app.core.security import get_current_user, get_password_hash, require_admin

@@ -4,7 +4,7 @@ Allocates cases to daily cause lists with 15% slack
 """
 import heapq
 from datetime import date, time, timedelta
-from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 from app.core.config import settings
 from app.models.bench import Bench
