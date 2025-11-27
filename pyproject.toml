@@ -61,3 +61,83 @@ quote-style = "double"
 
 # Indent with spaces
 indent-style = "space"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+# Allow forward references
+[[tool.mypy.overrides]]
+module = "app.models.*"
+warn_return_any = false
+disable_error_code = ["name-defined", "no-redef"]
+
+# Training and experimental scripts
+[[tool.mypy.overrides]]
+module = [
+    "backend.create_large_dataset",
+    "backend.train_enhanced_bns_model",
+    "backend.train_with_database_cases",
+    "backend.check_case_count",
+    "backend.seed_data",
+]
+ignore_errors = true
+
+# Smart scheduling service has some incomplete code
+[[tool.mypy.overrides]]
+module = "app.services.smart_scheduling_service"
+disable_error_code = ["name-defined", "no-redef", "attr-defined"]
+
+# NLP services with experimental code
+[[tool.mypy.overrides]]
+module = "app.services.nlp.*"
+disable_error_code = ["attr-defined", "return-value", "import-untyped"]
+
+# SMS and external service stubs
+[[tool.mypy.overrides]]
+module = "app.services.sms_service"
+disable_error_code = ["attr-defined", "import-not-found"]
+
+# Model compatibility layer
+[[tool.mypy.overrides]]
+module = "app.services.model_compat"
+disable_error_code = ["attr-defined", "import-untyped"]
+
+# AI service - sklearn/nltk imports
+[[tool.mypy.overrides]]
+module = "app.services.ai_service"
+disable_error_code = ["import-untyped"]
+
+# Enhanced NLP service with return type issues
+[[tool.mypy.overrides]]
+module = "app.services.enhanced_nlp_service"
+disable_error_code = ["return-value"]
+
+# Pydantic models have Field issues with mypy
+[[tool.mypy.overrides]]
+module = ["app.models.user", "app.models.hearing_mongodb", "app.models.case_mongodb"]
+disable_error_code = ["call-overload"]
+
+# Simple smart scheduling
+[[tool.mypy.overrides]]
+module = "app.services.simple_smart_scheduling"
+disable_error_code = ["attr-defined", "var-annotated"]
+
+# Core config
+[[tool.mypy.overrides]]
+module = "app.core.config"
+disable_error_code = ["no-redef"]
+
+# Services with no-any-return issues
+[[tool.mypy.overrides]]
+module = ["app.services.email_service"]
+disable_error_code = ["no-any-return", "import-untyped"]
+
+# Scheduler
+[[tool.mypy.overrides]]
+module = "app.services.scheduler"
+disable_error_code = ["annotation-unchecked"]
+

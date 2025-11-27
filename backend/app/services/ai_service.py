@@ -9,7 +9,7 @@ import pickle
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 # Import model compatibility layer FIRST (before pickle loading)
 # Import the module for its side-effects (registering compatibility classes for pickle)
@@ -330,7 +330,7 @@ class AIService:
 
         # Determine best match
         if scores:
-            best_category = max(scores, key=scores.get)
+            best_category = max(scores, key=lambda x: scores.get(x, 0))
             confidence = min(
                 0.9, scores[best_category] / 5.0
             )  # Normalize to confidence
@@ -641,7 +641,7 @@ class AIService:
         case_description: str,
         case_title: str = "",
         limit: int = 5,
-        all_cases: List[Any] = None,
+        all_cases: Optional[List[Any]] = None,
     ) -> List[Dict]:
         """
         Find similar cases using text similarity
@@ -714,7 +714,7 @@ class AIService:
             return []
 
     async def generate_case_insights(
-        self, case_data: Dict, all_cases: List[Any] = None
+        self, case_data: Dict, all_cases: Optional[List[Any]] = None
     ) -> Dict:
         """
         Generate AI insights for a specific case

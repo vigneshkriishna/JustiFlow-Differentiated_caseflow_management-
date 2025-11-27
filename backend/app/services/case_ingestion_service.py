@@ -6,7 +6,7 @@ Automatically detects case type, priority, and DCM track from case documents
 import json
 import re
 from datetime import date, datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 from pymongo import MongoClient
 
@@ -245,7 +245,7 @@ class CaseIngestionService:
         if max(scores.values()) == 0:
             return "CIVIL"
 
-        return max(scores, key=scores.get)
+        return max(scores, key=lambda x: scores.get(x, 0))
 
     def detect_priority(self, text: str) -> str:
         """
@@ -454,7 +454,12 @@ class CaseIngestionService:
         Returns:
             Summary of ingestion results
         """
-        results = {"total": len(cases), "success": 0, "failed": 0, "cases": []}
+        results: Dict[str, Any] = {
+            "total": len(cases),
+            "success": 0,
+            "failed": 0,
+            "cases": [],
+        }
 
         for case_data in cases:
             try:
@@ -464,17 +469,19 @@ class CaseIngestionService:
                     filing_date=case_data.get("filing_date"),
                     additional_info=case_data.get("additional_info"),
                 )
-                results["success"] += 1
-                results["cases"].append(result)
+                results["success"] = results.get("success", 0) + 1
+                if isinstance(results["cases"], list):
+                    results["cases"].append(result)
             except Exception as e:
-                results["failed"] += 1
-                results["cases"].append(
-                    {
-                        "success": False,
-                        "error": str(e),
-                        "title": case_data.get("title", "Unknown"),
-                    }
-                )
+                results["failed"] = results.get("failed", 0) + 1
+                if isinstance(results["cases"], list):
+                    results["cases"].append(
+                        {
+                            "success": False,
+                            "error": str(e),
+                            "title": case_data.get("title", "Unknown"),
+                        }
+                    )
 
         return results
 

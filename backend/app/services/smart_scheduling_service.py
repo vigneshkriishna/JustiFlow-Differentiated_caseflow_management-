@@ -7,7 +7,7 @@ import heapq
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlmodel import Session, select
 
@@ -46,8 +46,8 @@ class CaseSchedulingRequest:
     case_type: CaseType
     priority: CasePriority
     estimated_duration: int  # minutes
-    preferred_dates: List[datetime] = None
-    required_participants: List[int] = None  # user IDs
+    preferred_dates: Optional[List[datetime]] = None
+    required_participants: Optional[List[int]] = None  # user IDs
     complexity_score: float = 1.0
     urgency_multiplier: float = 1.0
 
@@ -90,9 +90,10 @@ class SmartSchedulingService:
 
         # Get all benches if none specified
         if bench_id:
-            benches = [session.get(Bench, bench_id)]
+            benches_result = session.get(Bench, bench_id)
+            benches: List[Bench] = [benches_result] if benches_result else []
         else:
-            benches = session.exec(select(Bench)).all()
+            benches = list(session.exec(select(Bench)).all())
 
         # Get existing hearings in the date range
         existing_hearings = session.exec(
@@ -225,7 +226,7 @@ class SmartSchedulingService:
             return {"error": "No available slots in the specified date range"}
 
         # Calculate priority scores for all cases
-        case_priorities = []
+        case_priorities: List[Tuple[float, int, Case]] = []
         for case in cases:
             priority_score = self.calculate_case_scheduling_priority(case, strategy)
             heapq.heappush(
@@ -362,7 +363,7 @@ class SmartSchedulingService:
         # Get pending cases
         pending_cases = session.exec(
             select(Case).where(
-                Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
+                Case.status.in_([CaseStatus.FILED.value, CaseStatus.UNDER_REVIEW.value])
             )
         ).all()
 
@@ -568,8 +569,8 @@ class SmartSchedulingService:
             )
         ).all()
 
-        bench_workload = {}
-        judge_workload = {}
+        bench_workload: Dict[int, int] = {}
+        judge_workload: Dict[int, int] = {}
 
         for hearing in hearings:
             bench_workload[hearing.bench_id] = (
@@ -634,7 +635,7 @@ class SmartSchedulingService:
         recommendations = []
 
         # Analyze case types
-        case_type_counts = {}
+        case_type_counts: Dict[CaseType, int] = {}
         for case in pending_cases:
             case_type_counts[case.case_type] = (
                 case_type_counts.get(case.case_type, 0) + 1
@@ -769,7 +770,7 @@ class SmartSchedulingService:
             "early_morning": len([s for s in slots if s.start_time < time(11, 0)]),
         }
 
-        return max(time_periods, key=time_periods.get)
+        return max(time_periods, key=lambda x: time_periods.get(x, 0))
 
     def _estimate_case_duration(self, case: Case) -> int:
         """Estimate case duration based on type and complexity"""
@@ -892,7 +893,7 @@ class SmartSchedulingService:
         # Get all cases that need scheduling
         pending_cases = session.exec(
             select(Case).where(
-                Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
+                Case.status.in_([CaseStatus.FILED.value, CaseStatus.UNDER_REVIEW.value])
             )
         ).all()
 
@@ -964,7 +965,7 @@ class SmartSchedulingService:
                         )
 
         # Analyze resource utilization
-        bench_utilization = {}
+        bench_utilization: Dict[int, List[Hearing]] = {}
         for hearing in hearings:
             bench_id = hearing.bench_id
             if bench_id not in bench_utilization:
