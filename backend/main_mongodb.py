@@ -17,11 +17,11 @@ from beanie import Document, init_beanie
 
 # Import model compatibility layer FIRST and register in __main__
 try:
-    from app.services.model_compat import EnhancedBNSClassifierV2
+    from app.services.model_compat import EnhancedBNSClassifierV2  # type: ignore
 
     # Register the class so pickle can find it when loading
-    sys.modules[__name__].EnhancedBNSClassifierV2 = EnhancedBNSClassifierV2
-    globals()["EnhancedBNSClassifierV2"] = EnhancedBNSClassifierV2
+    sys.modules[__name__].EnhancedBNSClassifierV2 = EnhancedBNSClassifierV2  # type: ignore
+    globals()["EnhancedBNSClassifierV2"] = EnhancedBNSClassifierV2  # type: ignore
 except ImportError:
     pass
 
@@ -45,7 +45,7 @@ try:
 except ImportError as e:
     AI_ENABLED = False
     print(f"⚠️ AI Services not available: {e}")
-    ai_service = None
+    ai_service = None  # type: ignore[assignment]
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, config.log_level))
@@ -59,7 +59,7 @@ security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # MongoDB client
-mongodb_client: AsyncIOMotorClient = None
+mongodb_client: Optional[AsyncIOMotorClient] = None
 
 
 # User roles
@@ -87,8 +87,8 @@ class CaseStatus(str, Enum):
 
 # MongoDB Models (Beanie Documents)
 class User(Document):
-    username: str = Field(index=True)
-    email: str = Field(index=True)
+    username: str = Field(index=True)  # type: ignore[call-overload]
+    email: str = Field(index=True)  # type: ignore[call-overload]
     full_name: str
     hashed_password: str
     role: UserRole
@@ -100,7 +100,7 @@ class User(Document):
 
 
 class Case(Document):
-    case_number: str = Field(index=True)
+    case_number: str = Field(index=True)  # type: ignore[call-overload]
     title: str
     description: str
     case_type: str
@@ -117,7 +117,7 @@ class Case(Document):
 
 
 class Hearing(Document):
-    case_id: str = Field(index=True)
+    case_id: str = Field(index=True)  # type: ignore[call-overload]
     scheduled_date: datetime
     location: str
     judge: str
@@ -132,17 +132,17 @@ class Hearing(Document):
 class CaseDocument(Document):
     """Document model for storing case-related files with content in MongoDB"""
 
-    filename: str = Field(..., index=True)
-    original_filename: str = Field(...)
-    file_content: str = Field(...)  # Base64 encoded file content
-    file_size: int = Field(...)  # File size in bytes
-    content_type: str = Field(...)  # MIME type
-    case_id: Optional[str] = Field(default=None, index=True)  # Associated case
-    uploaded_by: str = Field(..., index=True)  # User who uploaded
+    filename: str = Field(..., index=True)  # type: ignore[call-overload]
+    original_filename: str = Field(...)  # type: ignore[call-overload]
+    file_content: str = Field(...)  # Base64 encoded file content  # type: ignore[call-overload]
+    file_size: int = Field(...)  # File size in bytes  # type: ignore[call-overload]
+    content_type: str = Field(...)  # MIME type  # type: ignore[call-overload]
+    case_id: Optional[str] = Field(default=None, index=True)  # type: ignore[call-overload]  # Associated case
+    uploaded_by: str = Field(..., index=True)  # type: ignore[call-overload]  # User who uploaded
     upload_date: datetime = Field(default_factory=datetime.utcnow)
-    description: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)  # type: ignore[call-overload]
     document_type: str = Field(
-        default="general"
+        default="general"  # type: ignore[call-overload]
     )  # general, evidence, pleading, order, etc.
     is_public: bool = Field(default=False)  # Public access flag
 
@@ -222,11 +222,11 @@ app.add_middleware(
 
 # Helper functions
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return str(pwd_context.hash(password))
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return bool(pwd_context.verify(plain_password, hashed_password))
 
 
 def create_access_token(data: dict) -> str:
@@ -236,7 +236,7 @@ def create_access_token(data: dict) -> str:
     encoded_jwt = jwt.encode(
         to_encode, config.JWT_SECRET_KEY, algorithm=config.JWT_ALGORITHM
     )
-    return encoded_jwt
+    return str(encoded_jwt)
 
 
 async def get_current_user(
@@ -704,7 +704,8 @@ async def upload_document(
     file_content_base64 = base64.b64encode(file_content).decode("utf-8")
 
     # Generate unique filename
-    file_extension = Path(file.filename).suffix
+    filename_str = file.filename or "unknown"
+    file_extension = Path(filename_str).suffix
     unique_filename = f"{uuid.uuid4()}{file_extension}"
 
     # Create document record with file content stored in MongoDB
@@ -1061,8 +1062,8 @@ async def get_ai_dashboard_analytics(current_user: User = Depends(get_current_us
             }
 
         # Analyze case distribution
-        case_types = {}
-        priorities = {}
+        case_types: dict[str, int] = {}
+        priorities: dict[str, int] = {}
 
         for case in all_cases:
             case_type = case.case_type or "Unknown"

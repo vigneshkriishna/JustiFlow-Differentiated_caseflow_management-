@@ -9,6 +9,8 @@ from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import LabelEncoder
 
+__all__ = ["EnhancedBNSClassifierV2"]
+
 
 class EnhancedBNSClassifierV2:
     """
