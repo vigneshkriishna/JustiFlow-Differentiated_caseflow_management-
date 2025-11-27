@@ -4,7 +4,7 @@ Provides consistent error responses and proper error handling
 """
 import logging
 import traceback
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 class APIError(Exception):
     """Custom API error class"""
 
-    def __init__(self, message: str, status_code: int = 400, error_code: str = None):
+    def __init__(
+        self, message: str, status_code: int = 400, error_code: Optional[str] = None
+    ):
         self.message = message
         self.status_code = status_code
         self.error_code = error_code
@@ -31,14 +33,18 @@ class APIError(Exception):
 class BusinessLogicError(APIError):
     """Business logic validation error"""
 
-    def __init__(self, message: str, error_code: str = "BUSINESS_LOGIC_ERROR"):
+    def __init__(
+        self, message: str, error_code: Optional[str] = "BUSINESS_LOGIC_ERROR"
+    ):
         super().__init__(message, status_code=400, error_code=error_code)
 
 
 class ResourceNotFoundError(APIError):
     """Resource not found error"""
 
-    def __init__(self, resource: str, identifier: Union[str, int] = None):
+    def __init__(
+        self, resource: str, identifier: Optional[Union[str, int]] = None
+    ):
         message = f"{resource} not found"
         if identifier:
             message += f" with identifier: {identifier}"
@@ -48,7 +54,9 @@ class ResourceNotFoundError(APIError):
 class DuplicateResourceError(APIError):
     """Duplicate resource error"""
 
-    def __init__(self, resource: str, field: str = None, value: str = None):
+    def __init__(
+        self, resource: str, field: Optional[str] = None, value: Optional[str] = None
+    ):
         message = f"{resource} already exists"
         if field and value:
             message += f" with {field}: {value}"
@@ -58,7 +66,9 @@ class DuplicateResourceError(APIError):
 class InsufficientPermissionsError(APIError):
     """Insufficient permissions error"""
 
-    def __init__(self, action: str = None, resource: str = None):
+    def __init__(
+        self, action: Optional[str] = None, resource: Optional[str] = None
+    ):
         message = "Insufficient permissions"
         if action and resource:
             message += f" to {action} {resource}"
@@ -70,9 +80,9 @@ class InsufficientPermissionsError(APIError):
 def create_error_response(
     status_code: int,
     message: str,
-    error_code: str = None,
+    error_code: Optional[str] = None,
     details: Any = None,
-    path: str = None,
+    path: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create standardized error response"""
     error_response = {
@@ -271,22 +281,26 @@ def setup_exception_handlers(app: FastAPI):
 
 
 # Utility functions for raising common errors
-def raise_not_found(resource: str, identifier: Union[str, int] = None):
+def raise_not_found(resource: str, identifier: Optional[Union[str, int]] = None):
     """Raise a standardized not found error"""
     raise ResourceNotFoundError(resource, identifier)
 
 
-def raise_duplicate(resource: str, field: str = None, value: str = None):
+def raise_duplicate(
+    resource: str, field: Optional[str] = None, value: Optional[str] = None
+):
     """Raise a standardized duplicate resource error"""
     raise DuplicateResourceError(resource, field, value)
 
 
-def raise_business_error(message: str, error_code: str = None):
+def raise_business_error(message: str, error_code: Optional[str] = None):
     """Raise a standardized business logic error"""
     raise BusinessLogicError(message, error_code)
 
 
-def raise_insufficient_permissions(action: str = None, resource: str = None):
+def raise_insufficient_permissions(
+    action: Optional[str] = None, resource: Optional[str] = None
+):
     """Raise a standardized insufficient permissions error"""
     raise InsufficientPermissionsError(action, resource)
 

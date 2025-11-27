@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse
-from sqlmodel import Session, func, select
+from sqlmodel import Session, col, func, select
 
 from app.core.database import get_session
 from app.core.security import get_current_user, require_clerk
@@ -78,7 +78,7 @@ async def get_metrics(
 
     # Unplaced cases (filed but not scheduled)
     unplaced_stmt = select(func.count(Case.id)).where(
-        Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
+        col(Case.status).in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
     )
     if start_date and end_date:
         unplaced_stmt = unplaced_stmt.where(
@@ -221,7 +221,7 @@ async def get_case_statistics(
 async def export_cause_list(
     date: date = Query(..., description="Date for cause list"),
     format: str = Query("csv", regex="^(csv|pdf)$", description="Export format"),
-    request: Request = None,
+    request: Optional[Request] = None,
     current_user: User = Depends(require_clerk),
     session: Session = Depends(get_session),
 ):
@@ -240,7 +240,7 @@ async def export_cause_list(
         )
 
     # Prepare data
-    cause_list_data = []
+    cause_list_data: List[Dict[str, Any]] = []
     for hearing in hearings:
         # Get case info
         case_stmt = select(Case).where(Case.id == hearing.case_id)
@@ -277,8 +277,10 @@ async def export_cause_list(
         user=current_user,
         report_type=f"cause_list_{format}",
         report_params={"date": date.isoformat(), "format": format},
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=(
+            request.client.host if request and request.client else None
+        ),
+        user_agent=request.headers.get("user-agent") if request else None,
     )
 
     if format == "csv":

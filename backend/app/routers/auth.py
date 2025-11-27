@@ -153,7 +153,7 @@ async def register_user(
     # Log user creation
     audit_service.log_action(
         session=session,
-        action="create",
+        action=AuditAction.CREATE,
         resource_type="user",
         resource_id=db_user.id,
         after_data={

@@ -3,8 +3,8 @@ Advanced Analytics Service for DCM System
 Provides comprehensive analytics and reporting functionality
 """
 
-from datetime import datetime, timedelta
-from typing import Any, Dict
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, List, Optional
 
 from sqlmodel import Session, select
 
@@ -22,7 +22,7 @@ class AnalyticsService:
         self._cache = {}
 
     def get_dashboard_overview(
-        self, session: Session, user_id: int = None
+        self, session: Session, user_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """Get comprehensive dashboard overview with key metrics"""
 
@@ -55,14 +55,14 @@ class AnalyticsService:
         recent_activity = len(recent_cases)
 
         # BNS section analysis
-        bns_sections = {}
+        bns_sections: Dict[str, int] = {}
         for case in total_cases:
             if hasattr(case, "predicted_bns_section") and case.predicted_bns_section:
                 section = case.predicted_bns_section
                 bns_sections[section] = bns_sections.get(section, 0) + 1
 
         # User role distribution
-        role_counts = {}
+        role_counts: Dict[str, int] = {}
         for role in UserRole:
             count = len([u for u in total_users if u.role == role])
             role_counts[role.value] = count
@@ -118,13 +118,13 @@ class AnalyticsService:
         cases = session.exec(select(Case).where(Case.created_at >= cutoff_date)).all()
 
         # Time series data (cases per day)
-        daily_cases = {}
+        daily_cases: Dict[str, int] = {}
         for case in cases:
             date_key = case.created_at.strftime("%Y-%m-%d")
             daily_cases[date_key] = daily_cases.get(date_key, 0) + 1
 
         # Case resolution timeline
-        resolution_times = []
+        resolution_times: List[int] = []
         for case in cases:
             if case.status == CaseStatus.DISPOSED and hasattr(case, "disposed_at"):
                 if case.disposed_at:
@@ -174,8 +174,8 @@ class AnalyticsService:
         cases = session.exec(select(Case)).all()
 
         # BNS section frequency
-        section_frequency = {}
-        confidence_scores = []
+        section_frequency: Dict[str, int] = {}
+        confidence_scores: List[float] = []
         classification_success = 0
 
         for case in cases:
@@ -281,7 +281,7 @@ class AnalyticsService:
             },
             "trends": {
                 "most_common_crime_type": max(
-                    section_categories, key=section_categories.get
+                    section_categories, key=lambda x: section_categories.get(x, 0)
                 )
                 if section_categories
                 else "N/A",
@@ -299,12 +299,12 @@ class AnalyticsService:
         # Get audit logs for activity analysis
         recent_logs = session.exec(
             select(AuditLog).where(
-                AuditLog.timestamp >= datetime.now() - timedelta(days=30)
+                AuditLog.created_at >= datetime.now() - timedelta(days=30)
             )
         ).all()
 
         # Activity by user role
-        activity_by_role = {}
+        activity_by_role: Dict[str, int] = {}
         for log in recent_logs:
             if log.user_id:
                 user = session.get(User, log.user_id)
@@ -313,15 +313,15 @@ class AnalyticsService:
                     activity_by_role[role] = activity_by_role.get(role, 0) + 1
 
         # Activity by action type
-        activity_by_action = {}
+        activity_by_action: Dict[str, int] = {}
         for log in recent_logs:
             action = log.action.value
             activity_by_action[action] = activity_by_action.get(action, 0) + 1
 
-        # Daily activity trend
-        daily_activity = {}
+        # Daily activity
+        daily_activity: Dict[str, int] = {}
         for log in recent_logs:
-            date_key = log.timestamp.strftime("%Y-%m-%d")
+            date_key = log.created_at.strftime("%Y-%m-%d")
             daily_activity[date_key] = daily_activity.get(date_key, 0) + 1
 
         # Active users
@@ -332,7 +332,9 @@ class AnalyticsService:
                 "total_actions_30_days": len(recent_logs),
                 "unique_active_users": len(active_users),
                 "average_daily_actions": round(len(recent_logs) / 30, 1),
-                "most_active_day": max(daily_activity, key=daily_activity.get)
+                "most_active_day": max(
+                    daily_activity, key=lambda x: daily_activity.get(x, 0)
+                )
                 if daily_activity
                 else "N/A",
             },
@@ -372,7 +374,7 @@ class AnalyticsService:
         hearings = session.exec(select(Hearing)).all()
 
         # Hearing status distribution
-        status_distribution = {}
+        status_distribution: Dict[str, int] = {}
         for hearing in hearings:
             status = hearing.status.value if hasattr(hearing, "status") else "scheduled"
             status_distribution[status] = status_distribution.get(status, 0) + 1
@@ -413,7 +415,7 @@ class AnalyticsService:
             "schedule_overview": {
                 "total_hearings": len(hearings),
                 "hearings_this_week": len(
-                    [h for h in hearings if self._is_this_week(h.scheduled_date)]
+                    [h for h in hearings if self._is_this_week(h.hearing_date)]
                 )
                 if hearings
                 else 0,
@@ -438,10 +440,10 @@ class AnalyticsService:
         # Simple heuristic - in real implementation, this would be more sophisticated
         complexity_score = 0
 
-        # Check description length
-        if len(case.description) > 500:
+        # Check synopsis length
+        if len(case.synopsis) > 500:
             complexity_score += 2
-        elif len(case.description) > 200:
+        elif len(case.synopsis) > 200:
             complexity_score += 1
 
         # Check case type
@@ -479,12 +481,12 @@ class AnalyticsService:
         """Check if case is delayed beyond expected timelines"""
         return not self._is_case_on_time(case)
 
-    def _is_this_week(self, date: datetime) -> bool:
+    def _is_this_week(self, check_date: date) -> bool:
         """Check if date falls within current week"""
-        today = datetime.now()
+        today = datetime.now().date()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
-        return start_of_week <= date <= end_of_week
+        return start_of_week <= check_date <= end_of_week
 
 
 # Global analytics service instance

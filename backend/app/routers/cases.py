@@ -2,7 +2,7 @@
 Cases router for case management operations
 Enhanced with email notifications and intelligent auto-ingestion
 """
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -450,10 +450,17 @@ async def auto_ingest_case(
     try:
         ingestion_service = CaseIngestionService()
 
+        # Convert filing_date string to date if provided
+        filing_date_value: Optional[date] = None
+        if ingest_data.filing_date:
+            filing_date_value = datetime.fromisoformat(
+                ingest_data.filing_date
+            ).date()
+
         result = ingestion_service.ingest_case(
             title=ingest_data.title,
             description=ingest_data.description,
-            filing_date=ingest_data.filing_date,
+            filing_date=filing_date_value,
         )
 
         if result.get("success"):

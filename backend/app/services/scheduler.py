@@ -291,7 +291,7 @@ class CaseScheduler:
         date_hearings = [h for h in hearings if h.hearing_date == target_date]
 
         # Group by bench and check for overlaps
-        bench_schedules = {}
+        bench_schedules: Dict[int, List[HearingCreate]] = {}
         for hearing in date_hearings:
             if hearing.bench_id not in bench_schedules:
                 bench_schedules[hearing.bench_id] = []

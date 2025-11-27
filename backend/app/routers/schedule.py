@@ -3,14 +3,15 @@ Schedule router for case scheduling and hearing management
 Enhanced with smart scheduling algorithms and optimization
 """
 from datetime import date, datetime, timedelta
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, col, desc, select
 
 from app.core.database import get_session
 from app.core.security import get_current_user, require_clerk, require_judge
+from app.models.audit_log import AuditAction
 from app.models.bench import Bench
 from app.models.case import Case, CaseStatus
 from app.models.hearing import Hearing, HearingPublic, HearingUpdate
@@ -153,7 +154,7 @@ async def allocate_cases(
     num_days: int = Query(
         7, ge=1, le=30, description="Number of days to schedule over"
     ),
-    request: Request = None,
+    request: Optional[Request] = None,
     current_user: User = Depends(require_clerk),
     session: Session = Depends(get_session),
 ):
@@ -162,7 +163,7 @@ async def allocate_cases(
     """
     # Get unscheduled cases
     statement = select(Case).where(
-        Case.status.in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
+        col(Case.status).in_([CaseStatus.FILED, CaseStatus.UNDER_REVIEW])
     )
     unscheduled_cases = list(session.exec(statement).all())
 
@@ -178,7 +179,7 @@ async def allocate_cases(
 
     # Get available judges
     judge_statement = select(User).where(
-        User.role.in_([UserRole.JUDGE, UserRole.ADMIN]), User.is_active
+        col(User.role).in_([UserRole.JUDGE, UserRole.ADMIN]), User.is_active
     )
     judges = list(session.exec(judge_statement).all())
 
@@ -229,8 +230,12 @@ async def allocate_cases(
             hearing_data=hearing_create.dict(),
             hearing_id=hearing.id,
             case_id=hearing.case_id,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("user-agent"),
+            ip_address=(
+                request.client.host if request and request.client else None
+            ),
+            user_agent=(
+                request.headers.get("user-agent") if request else None
+            ),
         )
 
     return {
@@ -288,7 +293,7 @@ async def list_hearings(
 
     # Apply pagination and ordering
     statement = (
-        statement.order_by(Hearing.hearing_date.desc(), Hearing.start_time)
+        statement.order_by(desc(Hearing.hearing_date), Hearing.start_time)
         .offset(skip)
         .limit(limit)
     )
@@ -410,7 +415,7 @@ async def update_hearing(
     # Log hearing update
     audit_service.log_action(
         session=session,
-        action="update",
+        action=AuditAction.UPDATE,
         user=current_user,
         resource_type="hearing",
         resource_id=hearing.id,
@@ -448,7 +453,7 @@ async def get_cause_list(
     hearings = list(session.exec(statement).all())
 
     # Group by bench
-    cause_list = {}
+    cause_list: Dict[str, Dict[str, Any]] = {}
     for hearing in hearings:
         # Get bench info
         bench_statement = select(Bench).where(Bench.id == hearing.bench_id)

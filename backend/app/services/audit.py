@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, desc, select
 
 from app.core.database import get_session
 from app.models.audit_log import AuditAction, AuditLog
@@ -317,7 +317,7 @@ class AuditService:
             statement = statement.where(AuditLog.created_at <= end_date)
 
         # Order by most recent first and limit
-        statement = statement.order_by(AuditLog.created_at.desc()).limit(limit)
+        statement = statement.order_by(desc(AuditLog.created_at)).limit(limit)
 
         return list(session.exec(statement).all())
 
@@ -336,7 +336,7 @@ class AuditService:
         audit_logs = list(session.exec(statement).all())
 
         # Group by action type
-        action_counts = {}
+        action_counts: Dict[str, int] = {}
         first_action = None
         last_action = None
 

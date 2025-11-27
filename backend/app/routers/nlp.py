@@ -279,7 +279,7 @@ async def suggest_bns_sections(
     max_suggestions: int = Query(
         5, ge=1, le=10, description="Maximum number of suggestions"
     ),
-    request: Request = None,
+    request: Optional[Request] = None,
     current_user: User = Depends(require_clerk),
     session: Session = Depends(get_session),
 ):
@@ -309,8 +309,10 @@ async def suggest_bns_sections(
             "suggestions_count": len(suggestions),
         },
         description=f"BNS sections suggested for case synopsis ({len(suggestions)} suggestions)",
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=(
+            request.client.host if request and request.client else None
+        ),
+        user_agent=request.headers.get("user-agent") if request else None,
     )
 
     return {
@@ -329,7 +331,7 @@ async def suggest_laws_for_case(
     update_case: bool = Query(
         False, description="Whether to update case with suggestions"
     ),
-    request: Request = None,
+    request: Optional[Request] = None,
     current_user: User = Depends(require_clerk),
     session: Session = Depends(get_session),
 ):
@@ -386,8 +388,10 @@ async def suggest_laws_for_case(
         after_data={"suggestions_count": len(suggestions), "updated_case": update_case},
         description=f"BNS sections suggested for case {case.case_number}",
         case_id=case_id,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=(
+            request.client.host if request and request.client else None
+        ),
+        user_agent=request.headers.get("user-agent") if request else None,
     )
 
     return {
@@ -497,7 +501,7 @@ async def submit_suggestion_feedback(
     section_number: str,
     feedback_type: str = Query(..., regex="^(helpful|not_helpful|incorrect)$"),
     comments: Optional[str] = None,
-    request: Request = None,
+    request: Optional[Request] = None,
     current_user: User = Depends(require_clerk),
     session: Session = Depends(get_session),
 ):
@@ -532,8 +536,10 @@ async def submit_suggestion_feedback(
         },
         description=f"User feedback on BNS suggestion: {feedback_type}",
         case_id=case_id,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
+        ip_address=(
+            request.client.host if request and request.client else None
+        ),
+        user_agent=request.headers.get("user-agent") if request else None,
     )
 
     return {
@@ -657,7 +663,7 @@ async def get_dashboard_analytics(
 
         seven_days_ago = datetime.now() - timedelta(days=7)
         recent_count = sum(
-            1 for case in cases if case.created_at and case.created_at >= seven_days_ago
+            (1 for case in cases if case.created_at and case.created_at >= seven_days_ago), 0
         )
 
         return {
@@ -668,7 +674,7 @@ async def get_dashboard_analytics(
             "case_type_distribution": type_counts,
             "recent_classifications": recent_count,
             "bns_sections_identified": len(
-                set(case.bns_section for case in cases if case.bns_section)
+                set(case.suggested_laws for case in cases if case.suggested_laws)
             ),
             "avg_confidence": 0.85,
         }
