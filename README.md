@@ -52,7 +52,7 @@
 ## 🖼️ Screenshots
 
 ### Dashboard Overview
-![Dashboard](./screenshots/dashboard.png)
+![Dashboard]("C:\Users\vigne\Downloads\{DA199802-E72C-4E2F-AFED-4AF9DBCD7C0E}.png")
 *Real-time analytics showing case statistics, pending hearings, and system performance metrics*
 
 ### Case Management Interface
