@@ -72,7 +72,7 @@
 # Role-based user administration with permissions control
 
 ### Document Upload & Management
-<img width="1920" height="1080" alt="{09C2EEF8-0F9F-49ED-97BC-C069849FD1EF}" src="https://github.com/user-attachments/assets/7c644f06-5496-4ebd-b9a4-beeefa3ab3e4" />)
+<img width="1920" height="1080" alt="{09C2EEF8-0F9F-49ED-97BC-C069849FD1EF}" src="https://github.com/user-attachments/assets/7c644f06-5496-4ebd-b9a4-beeefa3ab3e4" />
 # Secure document storage with categorization and search functionality
 
 ### Analytics Dashboard
