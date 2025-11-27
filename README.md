@@ -51,37 +51,37 @@
 
 ## 🖼️ Screenshots
 
+### Login Page
+<img width="1888" height="908" alt="{D9695857-903A-491C-A203-ECECEBAEABEE}" src="https://github.com/user-attachments/assets/25acfb2f-c31a-4183-ba00-674ad5b16717" />
+# Secure authentication with JWT token-based system
+
 ### Dashboard Overview
-![Dashboard](./screenshots/dashboard.png)
-*Real-time analytics showing case statistics, pending hearings, and system performance metrics*
+<img width="1920" height="1080" alt="{DA199802-E72C-4E2F-AFED-4AF9DBCD7C0E}" src="https://github.com/user-attachments/assets/1d96282d-9c15-424f-bc18-883da1b9bade" />
+# Real-time analytics showing case statistics, pending hearings, and system performance metrics
 
 ### Case Management Interface
-![Case Management](./screenshots/cases.png)
-*Comprehensive case listing with advanced filters, search, and bulk actions*
+<img width="1920" height="1080" alt="{67D0E027-B498-4FD2-9664-C06803FBD517}" src="https://github.com/user-attachments/assets/04f559b5-ab7e-4c0b-afd1-55ac2c0d6c6a" />
+# Comprehensive case listing with advanced filters, search, and bulk actions
 
 ### Smart Scheduling System
-![Smart Scheduling](./screenshots/schedule.png)
-*AI-powered priority-based hearing allocation with conflict detection*
+<img width="1920" height="1080" alt="{E2244463-4774-46CF-A9B8-A25ADCDC530F}" src="https://github.com/user-attachments/assets/37805bee-933d-4d9b-a21c-4f2647f37566" />
+# AI-powered priority-based hearing allocation with conflict detection
 
 ### User Management (Admin)
-![User Management](./screenshots/users.png)
-*Role-based user administration with permissions control*
+<img width="1920" height="1080" alt="{B52EDFC4-1D5C-447A-92FA-DA8215340256}" src="https://github.com/user-attachments/assets/1ff2bfda-59fb-400c-8e41-39cc6f5ee915" />
+# Role-based user administration with permissions control
 
 ### Document Upload & Management
-![Documents](./screenshots/documents.png)
-*Secure document storage with categorization and search functionality*
+<img width="1920" height="1080" alt="{09C2EEF8-0F9F-49ED-97BC-C069849FD1EF}" src="https://github.com/user-attachments/assets/7c644f06-5496-4ebd-b9a4-beeefa3ab3e4" />
+# Secure document storage with categorization and search functionality
 
 ### Analytics Dashboard
-![Analytics](./screenshots/analytics.png)
-*Advanced analytics with trend visualization and predictive insights*
-
-### Login Page
-![Login](./screenshots/login.png)
-*Secure authentication with JWT token-based system*
+<img width="1920" height="1080" alt="{67D0E027-B498-4FD2-9664-C06803FBD517}" src="https://github.com/user-attachments/assets/f3b1eeb1-92bc-4256-b1c5-898e7902620c" />
+# Advanced analytics with trend visualization and predictive insights
 
 ### Case Details View
-![Case Details](./screenshots/case-details.png)
-*Detailed case information with timeline, documents, and hearing history*
+<img width="1920" height="1080" alt="{3DE03770-93ED-40C4-A420-B3576BBAFBD3}" src="https://github.com/user-attachments/assets/4c895712-d8ae-4f4b-bf96-5d997f3f25e5" />
+# Detailed case information with timeline, documents, and hearing history
 
 ---
 
@@ -737,7 +737,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Authors
 
-- **Vignesh Krishna** - *Lead Developer* - [@vigneshkriishna](https://github.com/vigneshkriishna)
+- **Vignesh** - *Lead Developer* - [@vigneshkriishna](https://github.com/vigneshkriishna)
 
 ---
 
@@ -755,8 +755,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues, questions, or suggestions:
 
-- **GitHub Issues**: [Create an issue](https://github.com/vigneshkriishna/Yukthi-Differentiated_caseflow_management-/issues)
-- **Documentation**: [Project Wiki](https://github.com/vigneshkriishna/Yukthi-Differentiated_caseflow_management-/wiki)
+- **GitHub Issues**: [Create an issue](https://github.com/vigneshkriishna/JustiFlow-Differentiated_caseflow_management-/issues)
+- **Documentation**: [Project Wiki](https://github.com/vigneshkriishna/JustiFlow-Differentiated_caseflow_management-/wiki)
 
 ---
 
