@@ -1172,4 +1172,4 @@ if __name__ == "__main__":
         print("   - 📊 AI Dashboard Analytics")
     print()
 
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host=config.HOST, port=config.PORT)

@@ -47,21 +47,13 @@ class Config:
 
     @property
     def MONGODB_USERNAME(self) -> str:
-        username = os.getenv("MONGODB_USERNAME")
-        if not username:
-            raise ValueError(
-                "MONGODB_USERNAME environment variable is required. Please set it in your .env file."
-            )
-        return username
+        """MongoDB username (optional for local MongoDB)"""
+        return os.getenv("MONGODB_USERNAME", "")
 
     @property
     def MONGODB_PASSWORD(self) -> str:
-        password = os.getenv("MONGODB_PASSWORD")
-        if not password:
-            raise ValueError(
-                "MONGODB_PASSWORD environment variable is required. Please set it in your .env file."
-            )
-        return password
+        """MongoDB password (optional for local MongoDB)"""
+        return os.getenv("MONGODB_PASSWORD", "")
 
     # =============================================================================
     # JWT Configuration
