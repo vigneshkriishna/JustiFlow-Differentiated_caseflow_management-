@@ -15,15 +15,11 @@ from typing import Optional
 
 from beanie import Document, init_beanie
 
-# Import model compatibility layer FIRST and register in __main__
-try:
-    from app.services.model_compat import EnhancedBNSClassifierV2  # type: ignore
-
-    # Register the class so pickle can find it when loading
-    sys.modules[__name__].EnhancedBNSClassifierV2 = EnhancedBNSClassifierV2  # type: ignore
-    globals()["EnhancedBNSClassifierV2"] = EnhancedBNSClassifierV2  # type: ignore
-except ImportError:
-    pass
+# MongoDB version doesn't need the model compatibility layer
+# Disable it to avoid importing SQLModel models
+AI_ENABLED = False
+ai_service = None  # type: ignore[assignment]
+print("⚠️ AI Services disabled for MongoDB version (uses PostgreSQL models)")
 
 # Import our configuration
 from config import config
@@ -35,17 +31,6 @@ from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 from pydantic import BaseModel, Field
-
-# Import AI service
-try:
-    from app.services.ai_service import ai_service
-
-    AI_ENABLED = True
-    print("✅ AI Services loaded successfully")
-except ImportError as e:
-    AI_ENABLED = False
-    print(f"⚠️ AI Services not available: {e}")
-    ai_service = None  # type: ignore[assignment]
 
 # Configure logging
 logging.basicConfig(level=getattr(logging, config.log_level))
