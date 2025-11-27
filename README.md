@@ -1,4 +1,4 @@
-# 🏛️ Yukthi - Differentiated Case Management System
+# 🏛️ JustiFlow- Differentiated Case Management System
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
@@ -10,7 +10,7 @@
 
 ## 🌟 Overview
 
-**Yukthi DCM System** is a comprehensive Differentiated Case Management platform designed to revolutionize court operations in India. It leverages artificial intelligence, natural language processing, and smart scheduling algorithms to automate case classification, optimize judicial resource allocation, and reduce case backlog.
+**JustiFlow DCM System** is a comprehensive Differentiated Case Management platform designed to revolutionize court operations in India. It leverages artificial intelligence, natural language processing, and smart scheduling algorithms to automate case classification, optimize judicial resource allocation, and reduce case backlog.
 
 ### Key Highlights
 
@@ -270,7 +270,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👥 Team
 
-**Project Yukthi** - Differentiated Case Management System
+**Project JustiFlow** - Differentiated Case Management System
 - GitHub: [@vigneshkriishna](https://github.com/vigneshkriishna)
 
 ## 🙏 Acknowledgments
@@ -284,7 +284,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues, questions, or suggestions:
 - Create an issue on GitHub
-- Email: [Your Email]
+- Email: [Vigneshpop9738@gmail.com]
 
 ---
 
