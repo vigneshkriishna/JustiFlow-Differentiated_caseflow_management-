@@ -12,9 +12,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 # Import model compatibility layer FIRST (before pickle loading)
+# Import the module for its side-effects (registering compatibility classes for pickle)
 try:
-    from .model_compat import EnhancedBNSClassifierV2
-except ImportError:
+    import importlib
+    importlib.import_module('.model_compat', package=__package__)
+except Exception:
+    # If model_compat isn't available, continue without error
     pass
 
 # ML and NLP imports

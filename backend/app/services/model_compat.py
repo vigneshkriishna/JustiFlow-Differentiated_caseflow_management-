@@ -4,8 +4,9 @@ This module provides backward compatibility for loading legacy pickled models
 """
 
 import sys
+
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.preprocessing import LabelEncoder
 
 

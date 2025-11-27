@@ -481,7 +481,7 @@ async def get_cases(current_user: User = Depends(get_current_user)):
         logger.info(f"📋 Fetching cases for user: {current_user.username}")
         cases = await Case.find().to_list()
         logger.info(f"📊 Found {len(cases)} cases in database")
-        
+
         result = [
             {
                 "id": str(case.id),
